@@ -1,0 +1,17 @@
+.room {
+    height: 100%;
+    border-top: 1px solid lightgray;
+    border-bottom: 1px solid lightgray;
+}
+
+.room .panels {
+    height: 100%;
+}
+
+.room .panel {
+    height: 100%;
+}
+
+.room .video-panel {
+    height: 100%;
+}

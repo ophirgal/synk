@@ -1,0 +1,30 @@
+.layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* .layout>*+* {
+    border-top: 1px solid #615fff;
+} */
+
+.layout header {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+}
+
+.layout main {
+    flex: 8;
+    min-height: 600px;
+}
+
+.layout footer {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
