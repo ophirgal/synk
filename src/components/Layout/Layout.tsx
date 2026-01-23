@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom"
+import { Outlet } from "react-router"
 import { Toaster } from "sonner"
 
 import "./Layout.css"
@@ -17,7 +17,7 @@ export default function Layout() {
             </header>
             <main>
                 <Outlet />
-                <Toaster expand />
+                <Toaster expand visibleToasts={10} />
             </main>
             <footer className="text-gray-400 ">
                 <p>&copy; 2026 synk.<br />All rights reserved.</p>

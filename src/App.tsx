@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router"
 
 import './App.css'
 import Layout from "./components/Layout/Layout"
@@ -12,6 +12,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
+          <Route path="/rooms" element={<Room />} />
           <Route path="/rooms/:id" element={<Room />} />
           <Route path="page-not-found" element={<PageNotFound />} />
           <Route path="*" element={<Navigate to="/page-not-found" />} />

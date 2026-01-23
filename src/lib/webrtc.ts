@@ -64,6 +64,9 @@ const createAnswerForRoom = async (
     onIceCandidate: (candidate: RTCIceCandidateInit) => void,
     onConnectionConnected: () => void
 ): Promise<RTCSessionDescriptionInit> => {
+    if (peerConnection) { // connection was created, return local description as answer
+        return peerConnection.localDescription!;
+    }
     peerConnection = new RTCPeerConnection(servers);
 
     localStream?.getTracks().forEach(track => {

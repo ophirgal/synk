@@ -17,10 +17,10 @@ export default function Home() {
                         Just pure, synchronized productivity.
                     </p>
                     <a
-                        href="/rooms/1"
+                        href="/rooms"
                         className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg px-8 py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                     >
-                        Try it Out!
+                        Try Now!
                     </a>
                 </div>
             </div>
