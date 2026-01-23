@@ -3,7 +3,7 @@ import { Copy } from "lucide-react"
 import { toast } from "sonner"
 
 import {
-    initWebRTC,
+    initLocalStream,
     createOfferForRoom,
     createAnswerForRoom,
     setRemoteAnswer,
@@ -140,7 +140,7 @@ export default function Room() {
     }, [currentRoomId]);
 
     useEffect(() => {
-        initWebRTC()
+        initLocalStream()
     })
 
     useEffect(() => {
@@ -210,7 +210,7 @@ Follow-up: Can you come up with an algorithm that is less than O(n2) time comple
                         </div>
                     }
                     <div className="flex-1 flex flex-col justify-center items-center gap-4 h-100">
-                        <video id="curr-user" className="rounded object-cover max-h-[45%] w-full" autoPlay playsInline></video>
+                        <video id="curr-user" className="rounded object-cover max-h-[45%] w-full" autoPlay playsInline muted></video>
                         <video id="peer-user" className={`rounded object-cover max-h-[45%] w-full ${isPeerJoined ? '' : 'hidden'}`} autoPlay playsInline></video>
                         <div className="flex gap-2">
                             <Button onClick={handleCreateRoom} variant="default" className="flex-1">
