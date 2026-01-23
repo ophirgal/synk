@@ -11,7 +11,6 @@ import {
     addRemoteIceCandidate,
     getRemoteStream,
     isRemoteDescriptionSet,
-    getPeerConnection
 } from "@/lib/webrtc"
 import { createRoomLink } from "@/lib/utils"
 import {
