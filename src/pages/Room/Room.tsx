@@ -11,6 +11,7 @@ import {
     addRemoteIceCandidate,
     getRemoteStream,
     isRemoteDescriptionSet,
+    getPeerConnection,
 } from "@/lib/webrtc"
 import { createRoomLink } from "@/lib/utils"
 import {
@@ -57,12 +58,14 @@ export default function Room() {
             // Listen for Room Updates (answer & ICE candidates from peer)
             const unsubscribe = databaseService.listenForRoomUpdates(room.id, async (room) => {
                 console.log('[DEBUG]: Creator received room updates:', room);
+                console.log("[DEBUG]: PeerConnection:", getPeerConnection());
                 if (!isRemoteDescriptionSet() && room.answer) {
                     await setRemoteAnswer(room.answer);
                 }
 
                 // Fetch and add any ICE candidates from the peer
                 if (room.answerIceCandidates) {
+                    toast(`[DEBUG]: Received ICE candidate ${room.answerIceCandidates.length - 1} from joiner peer`);
                     const lastCandidate = room.answerIceCandidates[room.answerIceCandidates.length - 1];
                     await addRemoteIceCandidate(lastCandidate);
                 }
@@ -121,13 +124,15 @@ export default function Room() {
 
             // Add any ICE candidates from the room creator
             if (room.offerIceCandidates) {
-                const lastCandidate = room.offerIceCandidates[room.offerIceCandidates.length - 1];
-                await addRemoteIceCandidate(lastCandidate);
+                for (let candidate of room.offerIceCandidates) {
+                    await addRemoteIceCandidate(candidate);
+                }
             }
 
             // Listen for Room Updates (ICE candidates from room creator)
             const unsubscribe = databaseService.listenForRoomUpdates(room.id, async (room) => {
                 console.log('[DEBUG]: Joiner received room updates:', room);
+                console.log("[DEBUG]: PeerConnection:", getPeerConnection());
                 // add any ICE candidates from the peer
                 if (room.offerIceCandidates) {
                     const lastCandidate = room.offerIceCandidates[room.offerIceCandidates.length - 1];
