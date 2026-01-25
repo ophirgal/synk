@@ -1,3 +1,7 @@
 .cm-editor {
     outline: none !important;
 }
+
+[data-panel="true"] > * {
+    border-radius: 0.25rem;
+}
