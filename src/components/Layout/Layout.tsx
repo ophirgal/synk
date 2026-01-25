@@ -1,27 +1,78 @@
-import { Outlet } from "react-router"
+import { Outlet, useMatch } from "react-router"
 import { Toaster } from "sonner"
+import { Menu } from "lucide-react"
 
-import "./Layout.css"
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from "@/components/ui/sheet"
 
 export default function Layout() {
+    const isRoomPage = useMatch("/rooms/*")
+
+    const navLinks = [
+        { href: "/", label: "Home" },
+        { href: "/", label: "Pricing" },
+        { href: "/", label: "FAQ" },
+        { href: "/", label: "Contact" },
+    ]
+
     return (
-        <div className="layout bg-gradient-to-br from-blue-50 to-indigo-100">
-            <header>
+        <div className="layout flex flex-col h-screen w-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+            <header className="flex-1 flex items-center justify-between px-8">
                 <a href="/" className="text-5xl font-bold no-underline text-indigo-500 hover:text-indigo-400 active:text-indigo-600 transition-colors">[synk]</a>
-                <nav className="flex justify-end gap-6">
-                    <a href="/" className="text-indigo-500 hover:text-indigo-400 active:text-indigo-600">Home</a>
-                    <a href="/" className="text-indigo-500 hover:text-indigo-400 active:text-indigo-600">Pricing</a>
-                    <a href="/" className="text-indigo-500 hover:text-indigo-400 active:text-indigo-600">FAQ</a>
-                    <a href="/" className="text-indigo-500 hover:text-indigo-400 active:text-indigo-600">Contact</a>
-                </nav>
+
+                {isRoomPage ? (
+                    <div className="flex items-center justify-end gap-2">
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <Menu className="cursor-pointer rounded hover:bg-indigo-50 active:text-indigo-500 h-8 w-8 text-indigo-500" />
+                            </SheetTrigger>
+                            <SheetContent side="right" className="w-[250px]">
+                                <SheetHeader>
+                                    <SheetTitle>Menu</SheetTitle>
+                                </SheetHeader>
+                                <nav className="flex flex-col gap-4 mt-6">
+                                    {navLinks.map((link) => (
+                                        <a
+                                            key={link.label}
+                                            href={link.href}
+                                            className="text-lg text-indigo-500 hover:text-indigo-400 active:text-indigo-600 transition-colors"
+                                        >
+                                            {link.label}
+                                        </a>
+                                    ))}
+                                </nav>
+                            </SheetContent>
+                        </Sheet>
+
+                    </div>
+                ) : (
+                    <nav className="flex justify-end gap-6">
+                        {navLinks.map((link) => (
+                            <a
+                                key={link.label}
+                                href={link.href}
+                                className="text-indigo-500 hover:text-indigo-400 active:text-indigo-600"
+                            >
+                                {link.label}
+                            </a>
+                        ))}
+                    </nav>
+                )}
             </header>
-            <main>
+            <main className={`flex-${isRoomPage ? "9" : "8"} min-h-[600px]`}>
                 <Outlet />
                 <Toaster expand visibleToasts={10} />
             </main>
-            <footer className="text-gray-400 ">
-                <p>&copy; 2026 synk.<br />All rights reserved.</p>
-            </footer>
+            {!isRoomPage &&
+                <footer className="flex-1 flex text-gray-400 items-center justify-center">
+                    <p>&copy; 2026 synk.<br />All rights reserved.</p>
+                </footer>
+            }
         </div>
     )
 }

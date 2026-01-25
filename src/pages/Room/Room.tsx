@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router"
-import { Copy } from "lucide-react"
 import { toast } from "sonner"
+import { Copy } from "lucide-react"
 
 import {
     initLocalStream,
@@ -22,14 +22,13 @@ import Editor from "@/components/Editor/Editor"
 import { Button } from "@/components/ui/button"
 import { databaseService } from "@/services/FirebaseDatabaseService"
 import type { Room } from "@/services/DatabaseService"
+import { useRoom } from "@/context/RoomContext"
 
-import "./Room.css"
-
-export default function Room() {
+export default function RoomPage() {
     const [isPeerJoined, setIsPeerJoined] = useState(false);
     const navigate = useNavigate();
     const pathParams = useParams(); // get id path variable from the router!
-    const [currentRoomId, setCurrentRoomId] = useState<string | null>(pathParams?.id || null);
+    const { roomLink, setCurrentRoomId, copyRoomLink } = useRoom();
     const isJoinAttemptedRef = useRef<boolean>(false);
 
     const handleCreateRoom = async () => {
@@ -72,9 +71,8 @@ export default function Room() {
                 unsubscribe();
             });
 
-            navigator.clipboard.writeText(createRoomLink(room.id));
             toast.success(`Room created successfully!`);
-            toast(`Room link copied to clipboard!`);
+            copyRoomLink(room.id);
         } catch (error) {
             console.error('Error creating room:', error);
             toast.error('Failed to create room. Please try again.');
@@ -146,17 +144,15 @@ export default function Room() {
         }
     }
 
-    const handleCopyRoomLink = useCallback(() => {
-        if (currentRoomId) {
-            navigator.clipboard.writeText(createRoomLink(currentRoomId));
-            toast('Room link copied to clipboard!');
-        }
-    }, [currentRoomId]);
+    const handleCopyRoomLink = () => {
+        copyRoomLink()
+    }
 
     useEffect(() => {
         (async () => {
             await initLocalStream()
             if (pathParams.id) {
+                setCurrentRoomId(pathParams.id)
                 await joinRoom(pathParams.id)
             }
         })()
@@ -173,9 +169,31 @@ export default function Room() {
     }, [isPeerJoined])
 
     return (
-        <div className="room bg-indigo-50">
-            <ResizablePanelGroup className="panels" orientation="horizontal">
-                <ResizablePanel className="problem-panel panel p-4 overflow-y-scroll" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
+        <div className="bg-indigo-50 h-full flex flex-col border-t">
+            <nav className="flex border-b h-[50px] justify-between items-center px-4">
+                <div className="flex items-center gap-2">
+                    <div>
+                        <Button onClick={handleCreateRoom} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                            Create Room
+                        </Button>
+                    </div>
+                    {roomLink &&
+                        <div id="room-link" className="bg-indigo-50 rounded border text-sm p-2 flex items-center gap-2 w-75">
+                            <p className="text-muted-foreground whitespace-nowrap"><strong>Room:</strong></p>
+                            <a
+                                href={roomLink}
+                                className="underline text-blue-600 hover:text-blue-800 truncate whitespace-nowrap select-all max-w-[200px]"
+                            >
+                                {roomLink}
+                            </a>
+                            <Copy className="cursor-pointer hover:text-gray-500 active:text-black h-4 w-4" onClick={handleCopyRoomLink} />
+                        </div>
+                    }
+                </div>
+                <p className="invisible">Global Settings Buttons...</p>
+            </nav >
+            <ResizablePanelGroup className="h-full" orientation="horizontal">
+                <ResizablePanel className="problem-panel h-full p-4 overflow-y-scroll" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
                     <p className="bg-indigo-100 rounded p-4 overflow-y-scroll text-left" style={{ whiteSpace: "pre-line" }}>
                         <span className="text-center"><strong>Two Sum</strong></span>
                         <br />
@@ -211,38 +229,17 @@ Follow-up: Can you come up with an algorithm that is less than O(n2) time comple
                     </p>
                 </ResizablePanel>
                 <ResizableHandle withHandle />
-                <ResizablePanel className="editor-panel panel p-4" defaultSize={50}>
+                <ResizablePanel className="editor-panel h-full p-4" defaultSize={50}>
                     <Editor />
                 </ResizablePanel>
                 <ResizableHandle withHandle />
-                <ResizablePanel className="video-panel panel p-4 flex flex-col h-full justify-center items-center gap-2" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
-                    {/* <h2><strong>Video Feed</strong></h2> */}
-                    {currentRoomId &&
-                        <div className="flex items-start justify-center h-[10%] w-full">
-                            <div className="bg-muted rounded border text-sm p-2 flex justify-between items-center max-w-[90%]">
-                                <p className="text-muted-foreground  whitespace-nowrap"><strong>Room Link:</strong></p>
-                                <a href={createRoomLink(currentRoomId)} className="underline text-blue-600 hover:text-blue-800 truncate whitespace-nowrap overflow-x-scroll max-w-[75%] select-all px-2">{createRoomLink(currentRoomId)}</a>
-                                <Button size="sm" variant="outline" onClick={handleCopyRoomLink}>
-                                    <Copy className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
-                    }
+                <ResizablePanel className="video-panel h-full p-4 flex flex-col h-full justify-center items-center gap-2" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
                     <div className="flex-1 flex flex-col justify-center items-center gap-4 h-100">
                         <video id="curr-user" className="rounded object-cover max-h-[45%] w-full" autoPlay playsInline muted></video>
                         <video id="peer-user" className={`rounded object-cover max-h-[45%] w-full ${isPeerJoined ? '' : 'hidden'}`} autoPlay playsInline></video>
-                        <div>
-                            <Button onClick={handleCreateRoom} variant="default" className="flex-1">
-                                Create Room
-                            </Button>
-                        </div>
                     </div>
                 </ResizablePanel>
             </ResizablePanelGroup>
         </div >
     )
-}
-
-function createRoomLink(roomId: string) {
-    return window.location.origin + "/rooms/" + roomId
 }

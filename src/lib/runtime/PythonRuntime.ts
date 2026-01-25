@@ -18,7 +18,7 @@ export class PythonRuntime implements RuntimeEngine {
     readonly id = "python";
     readonly languageName = "Python";
     readonly fileExtension = ".py";
-    readonly codemirrorLanguage = "python";
+    readonly languageId = "python";
     readonly defaultCode = `from datetime import datetime
 
 # 1. Get the current datetime object

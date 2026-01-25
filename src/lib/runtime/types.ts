@@ -13,8 +13,8 @@ export interface RuntimeEngine {
     /** File extension for this language (e.g., ".py", ".js") */
     readonly fileExtension: string;
 
-    /** CodeMirror language support identifier */
-    readonly codemirrorLanguage: string;
+    /** Language identifier for syntax highlighting (e.g., "python", "javascript") */
+    readonly languageId: string;
 
     /** Default code to show when the editor is first loaded */
     readonly defaultCode: string;

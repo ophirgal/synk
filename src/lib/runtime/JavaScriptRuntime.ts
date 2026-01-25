@@ -15,7 +15,7 @@ export class JavaScriptRuntime implements RuntimeEngine {
     readonly id = "javascript";
     readonly languageName = "JavaScript";
     readonly fileExtension = ".js";
-    readonly codemirrorLanguage = "javascript";
+    readonly languageId = "javascript";
     readonly defaultCode = `// Get the current date and time
 const now = new Date();
 

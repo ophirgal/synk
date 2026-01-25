@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { EditorView } from "@codemirror/view";
-import { basicSetup } from "codemirror";
-import { EditorState } from "@codemirror/state";
-import { python } from "@codemirror/lang-python";
-import { javascript } from "@codemirror/lang-javascript";
+import MonacoEditor from "@monaco-editor/react";
+import type { editor } from "monaco-editor";
 import {
     ResizablePanel,
     ResizablePanelGroup,
@@ -22,21 +19,8 @@ import { getAvailableRuntimes, createRuntime, type RuntimeEngine } from "@/lib/r
 
 import "./Editor.css"
 
-// Map runtime language identifiers to CodeMirror language extensions
-function getLanguageExtension(codemirrorLanguage: string) {
-    switch (codemirrorLanguage) {
-        case "python":
-            return python();
-        case "javascript":
-            return javascript();
-        default:
-            return python();
-    }
-}
-
 export default function Editor() {
-    const editorRef = useRef<HTMLDivElement | null>(null);
-    const viewRef = useRef<EditorView | null>(null);
+    const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
     const [output, setOutput] = useState<string>("");
     const [isReadyToRun, setIsReadyToRun] = useState(false);
@@ -56,8 +40,8 @@ export default function Editor() {
         }
 
         try {
-            const code = viewRef.current?.state.doc.toString();
-            await runtime.runCode(code || "");
+            const code = editorRef.current?.getValue() || "";
+            await runtime.runCode(code);
         } catch (err) {
             setOutput((prev) => prev + (err as Error).toString());
         }
@@ -67,6 +51,10 @@ export default function Editor() {
             outputDiv.scrollTop = outputDiv.scrollHeight;
         }
     }, [runtime]);
+
+    const handleEditorMount = (editor: editor.IStandaloneCodeEditor) => {
+        editorRef.current = editor;
+    };
 
     // Load the runtime
     useEffect(() => {
@@ -96,26 +84,6 @@ export default function Editor() {
         return () => {
             disposed = true;
             runtime.dispose();
-        };
-    }, [runtime]);
-
-    // Initialize CodeMirror editor
-    useEffect(() => {
-        if (!editorRef.current || viewRef.current || !runtime) return;
-
-        const state = EditorState.create({
-            doc: runtime.defaultCode,
-            extensions: [basicSetup, getLanguageExtension(runtime.codemirrorLanguage)],
-        });
-
-        viewRef.current = new EditorView({
-            state,
-            parent: editorRef.current,
-        });
-
-        return () => {
-            viewRef.current?.destroy();
-            viewRef.current = null;
         };
     }, [runtime]);
 
@@ -159,9 +127,19 @@ export default function Editor() {
                 </Button>
             </div>
             <div className="h-full" key={runtime.id}>
-                <ResizablePanelGroup className="panels" orientation="vertical">
+                <ResizablePanelGroup className="panels h-full" orientation="vertical">
                     <ResizablePanel className="bg-white" defaultSize={65}>
-                        <div ref={editorRef} className="border rounded mb-4 focus:outline-none text-left h-full overflow-y-scroll"></div>
+                        <MonacoEditor
+                            defaultValue={runtime.defaultCode}
+                            language={runtime.languageId}
+                            onMount={handleEditorMount}
+                            options={{
+                                minimap: { enabled: false },
+                                fontSize: 14,
+                                scrollBeyondLastLine: false,
+                                automaticLayout: true,
+                            }}
+                        />
                     </ResizablePanel>
                     <div className="w-full h-4 flex flex-col justify-center items-center">
                         <GripVerticalIcon className="size-2.5 rotate-90" />
