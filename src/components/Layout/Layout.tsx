@@ -21,8 +21,8 @@ export default function Layout() {
     ]
 
     return (
-        <div className="layout flex flex-col h-screen w-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-            <header className="flex-1 flex items-center justify-between px-8">
+        <div className="flex flex-col h-screen w-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+            <header className="flex items-center justify-between px-8 h-[75px]">
                 <a href="/" className="text-5xl font-bold no-underline text-indigo-500 hover:text-indigo-400 active:text-indigo-600 transition-colors">[synk]</a>
 
                 {isRoomPage ? (
@@ -64,7 +64,7 @@ export default function Layout() {
                     </nav>
                 )}
             </header>
-            <main className={`flex-${isRoomPage ? "9" : "8"} min-h-[600px]`}>
+            <main className={`flex-8 min-h-[600px]`}>
                 <Outlet />
                 <Toaster expand visibleToasts={10} />
             </main>
