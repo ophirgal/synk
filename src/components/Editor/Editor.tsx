@@ -1,7 +1,14 @@
-import { useRef, useState, useMemo } from "react";
-import CodeEditor from "./CodeEditor";
-import type { CodeEditorRef } from "./CodeEditor";
-import { Play } from "lucide-react"
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { EditorView } from "@codemirror/view";
+import { basicSetup } from "codemirror";
+import { EditorState } from "@codemirror/state";
+import { python } from "@codemirror/lang-python";
+import { javascript } from "@codemirror/lang-javascript";
+import {
+    ResizablePanel,
+    ResizablePanelGroup,
+} from "@/components/ui/resizable"
+import { GripVerticalIcon, Play } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import {
     Select,
@@ -10,13 +17,28 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-
-import "./Editor.css"
 import { Spinner } from "@/components/ui/spinner";
 import { getAvailableRuntimes, createRuntime, type RuntimeEngine } from "@/lib/runtime";
 
+import "./Editor.css"
+
+// Map runtime language identifiers to CodeMirror language extensions
+function getLanguageExtension(codemirrorLanguage: string) {
+    switch (codemirrorLanguage) {
+        case "python":
+            return python();
+        case "javascript":
+            return javascript();
+        default:
+            return python();
+    }
+}
+
 export default function Editor() {
-    const codeEditorRef = useRef<CodeEditorRef>(null);
+    const editorRef = useRef<HTMLDivElement | null>(null);
+    const viewRef = useRef<EditorView | null>(null);
+
+    const [output, setOutput] = useState<string>("");
     const [isReadyToRun, setIsReadyToRun] = useState(false);
     const [selectedLanguage, setSelectedLanguage] = useState("python");
 
@@ -27,9 +49,82 @@ export default function Editor() {
         return createRuntime(selectedLanguage);
     }, [selectedLanguage]);
 
-    const handleLanguageChange = (value: string) => {
-        setSelectedLanguage(value);
-    };
+    const runCode = useCallback(async () => {
+        if (!runtime?.isReady()) {
+            setOutput("Runtime is still loading...");
+            return;
+        }
+
+        try {
+            const code = viewRef.current?.state.doc.toString();
+            await runtime.runCode(code || "");
+        } catch (err) {
+            setOutput((prev) => prev + (err as Error).toString());
+        }
+
+        const outputDiv = document.getElementById('output-panel')?.childNodes[0] as HTMLDivElement;
+        if (outputDiv) {
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+    }, [runtime]);
+
+    // Load the runtime
+    useEffect(() => {
+        if (!runtime) return;
+
+        let disposed = false;
+
+        const loadRuntime = async () => {
+            try {
+                await runtime.load((text) => {
+                    if (!disposed) {
+                        setOutput((prev) => prev + text);
+                    }
+                });
+                if (!disposed) {
+                    setIsReadyToRun(true);
+                }
+            } catch (err) {
+                if (!disposed) {
+                    setOutput(`Failed to load runtime: ${(err as Error).message}`);
+                }
+            }
+        };
+
+        loadRuntime();
+
+        return () => {
+            disposed = true;
+            runtime.dispose();
+        };
+    }, [runtime]);
+
+    // Initialize CodeMirror editor
+    useEffect(() => {
+        if (!editorRef.current || viewRef.current || !runtime) return;
+
+        const state = EditorState.create({
+            doc: runtime.defaultCode,
+            extensions: [basicSetup, getLanguageExtension(runtime.codemirrorLanguage)],
+        });
+
+        viewRef.current = new EditorView({
+            state,
+            parent: editorRef.current,
+        });
+
+        return () => {
+            viewRef.current?.destroy();
+            viewRef.current = null;
+        };
+    }, [runtime]);
+
+    // Reset output when runtime changes
+    useEffect(() => {
+        if (runtime) {
+            setOutput("");
+        }
+    }, [runtime]);
 
     if (!runtime) {
         return <div>Failed to load runtime for {selectedLanguage}</div>;
@@ -38,7 +133,7 @@ export default function Editor() {
     return (
         <div className="flex flex-col h-full gap-2">
             <div className="flex justify-between">
-                <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
+                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
                     <SelectTrigger size="sm" className="w-[140px] bg-white">
                         <SelectValue placeholder="Select language" />
                     </SelectTrigger>
@@ -50,7 +145,7 @@ export default function Editor() {
                         ))}
                     </SelectContent>
                 </Select>
-                <Button disabled={!isReadyToRun} onClick={() => codeEditorRef.current?.runCode()} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                <Button disabled={!isReadyToRun} onClick={runCode} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
                     {isReadyToRun ?
                         <>
                             <Play className="h-4 w-4" />
@@ -63,12 +158,26 @@ export default function Editor() {
                     }
                 </Button>
             </div>
-            <CodeEditor
-                key={runtime.id}
-                ref={codeEditorRef}
-                runtime={runtime}
-                onReadyToRun={() => setIsReadyToRun(true)}
-            />
+            <div className="h-full" key={runtime.id}>
+                <ResizablePanelGroup className="panels" orientation="vertical">
+                    <ResizablePanel className="bg-white" defaultSize={65}>
+                        <div ref={editorRef} className="border rounded mb-4 focus:outline-none text-left h-full overflow-y-scroll"></div>
+                    </ResizablePanel>
+                    <div className="w-full h-4 flex flex-col justify-center items-center">
+                        <GripVerticalIcon className="size-2.5 rotate-90" />
+                    </div>
+                    <ResizablePanel id="output-panel" className="border rounded p-2 pb-2 bg-gray-50 text-gray-500 overflow-y-scroll" defaultSize={35}>
+                        <div className="text-xs text-left">
+                            {
+                                output ?
+                                    <pre>{output}</pre>
+                                    :
+                                    <pre className="italic text-center">Press <strong>Run</strong> to see the output...</pre>
+                            }
+                        </div>
+                    </ResizablePanel>
+                </ResizablePanelGroup>
+            </div>
         </div>
-    )
+    );
 }
