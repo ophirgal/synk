@@ -14,7 +14,7 @@ export default function Home() {
                         Have seamless 1-on-1 experiences, see changes instantly, and communicate naturally—all in one place.
                         No more switching between tools.
                         <br />
-                        Just pure, synchronized productivity.
+                        Just pure, <span className="font-semibold text-indigo-600">[synk]</span>hronized productivity.
                     </p>
                     <a
                         href="/rooms"

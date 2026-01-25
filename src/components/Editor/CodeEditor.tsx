@@ -3,112 +3,124 @@ import { EditorView } from "@codemirror/view";
 import { basicSetup } from "codemirror";
 import { EditorState } from "@codemirror/state";
 import { python } from "@codemirror/lang-python";
+import { javascript } from "@codemirror/lang-javascript";
 import {
     ResizablePanel,
     ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { GripVerticalIcon } from "lucide-react";
+import type { RuntimeEngine } from "@/lib/runtime";
 
-export interface PythonEditorRef {
+export interface CodeEditorRef {
     runCode: () => void;
 }
 
-interface PyodideInterface {
-    runPythonAsync: (code: string) => Promise<any>;
-    loadPackage: (pkg: string) => Promise<void>;
-}
-
-interface PythonEditorProps {
+interface CodeEditorProps {
+    runtime: RuntimeEngine;
     initialCode?: string;
     onReadyToRun?: () => void;
 }
 
-const PythonEditor = forwardRef<PythonEditorRef, PythonEditorProps>(
-    ({ initialCode, onReadyToRun }, ref) => {
+// Map runtime language identifiers to CodeMirror language extensions
+function getLanguageExtension(codemirrorLanguage: string) {
+    switch (codemirrorLanguage) {
+        case "python":
+            return python();
+        case "javascript":
+            return javascript();
+        // TODO: Future languages can be added here:
+        // case "java":
+        //     return java();
+        default:
+            return python(); // Default fallback
+    }
+}
+
+const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(
+    ({ runtime, initialCode, onReadyToRun }, ref) => {
         const editorRef = useRef<HTMLDivElement | null>(null);
         const viewRef = useRef<EditorView | null>(null);
-        const [pyodide, setPyodide] = useState<PyodideInterface | null>(null);
         const [output, setOutput] = useState<string>("");
 
         const runCode = useCallback(async () => {
-            if (!pyodide) {
-                setOutput("Pyodide is still loading...");
+            if (!runtime.isReady()) {
+                setOutput("Runtime is still loading...");
                 return;
             }
 
             try {
                 const code = viewRef.current?.state.doc.toString();
-                await pyodide.runPythonAsync(code || "");
+                await runtime.runCode(code || "");
             } catch (err) {
-                setOutput((err as Error).toString());
+                setOutput((prev) => prev + (err as Error).toString());
             }
 
             const outputDiv = document.getElementById('output-panel')?.childNodes[0] as HTMLDivElement;
             if (outputDiv) {
                 outputDiv.scrollTop = outputDiv.scrollHeight;
             }
-        }, [pyodide]);
+        }, [runtime]);
 
         // Expose methods to the parent component
         useImperativeHandle(ref, () => ({
             runCode: runCode
         }), [runCode]);
 
+        // Load the runtime
         useEffect(() => {
-            if (pyodide && onReadyToRun) {
-                onReadyToRun();
-            }
-        }, [pyodide])
+            let disposed = false;
 
-
-        useEffect(() => {
-            const load = async () => {
-                // @ts-ignore
-                const pyodide = await (window as any).loadPyodide({
-                    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.1/full/",
-                });
-
-                // Redirect stdout to our custom console
-                pyodide.globals.set("sys", pyodide.pyimport("sys"));
-
-                class StdoutWriter {
-                    write(s: string) {
-                        setOutput((prev) => prev + s);
+            const loadRuntime = async () => {
+                try {
+                    await runtime.load((text) => {
+                        if (!disposed) {
+                            setOutput((prev) => prev + text);
+                        }
+                    });
+                    if (!disposed) {
+                        onReadyToRun?.();
                     }
-                    flush() { } // Optional, no-op
+                } catch (err) {
+                    if (!disposed) {
+                        setOutput(`Failed to load runtime: ${(err as Error).message}`);
+                    }
                 }
-
-                pyodide.globals.get("sys").stdout = pyodide.toPy(new StdoutWriter());
-                pyodide.globals.get("sys").stderr = pyodide.toPy(new StdoutWriter());
-
-                setPyodide(pyodide);
             };
 
-            const script = document.createElement("script");
-            script.src = "https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js";
-            script.onload = load;
-            document.body.appendChild(script);
+            loadRuntime();
 
             return () => {
-                document.body.removeChild(script); // Cleanup on unmount
+                disposed = true;
+                runtime.dispose();
             };
-        }, []);
+        }, [runtime, onReadyToRun]);
 
+        // Initialize CodeMirror editor
         useEffect(() => {
             if (!editorRef.current || viewRef.current) return;
 
-            const startCode = initialCode || `print("Hello World!")`;
+            const startCode = initialCode || runtime.defaultCode;
 
             const state = EditorState.create({
                 doc: startCode,
-                extensions: [basicSetup, python()],
+                extensions: [basicSetup, getLanguageExtension(runtime.codemirrorLanguage)],
             });
 
             viewRef.current = new EditorView({
                 state,
                 parent: editorRef.current,
             });
-        }, [editorRef, viewRef]);
+
+            return () => {
+                viewRef.current?.destroy();
+                viewRef.current = null;
+            };
+        }, [initialCode, runtime]);
+
+        // Reset output when runtime changes
+        useEffect(() => {
+            setOutput("");
+        }, [runtime.id]);
 
         return (
             <div className="h-full">
@@ -118,14 +130,8 @@ const PythonEditor = forwardRef<PythonEditorRef, PythonEditorProps>(
                     </ResizablePanel>
                     <div className="w-full h-4 flex flex-col justify-center items-center">
                         <GripVerticalIcon className="size-2.5 rotate-90" />
-                        {/* <hr className="w-full"/> */}
                     </div>
                     <ResizablePanel id="output-panel" className="border rounded p-2 pb-2 bg-gray-50 text-gray-500 overflow-y-scroll" defaultSize={35}>
-                        {/* {pyodide && <button
-                        onClick={runCode}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                        Run Code
-                    </button>} */}
                         <div className="text-xs text-left">
                             {
                                 output ?
@@ -140,6 +146,6 @@ const PythonEditor = forwardRef<PythonEditorRef, PythonEditorProps>(
         );
     });
 
-PythonEditor.displayName = 'PythonEditor';
+CodeEditor.displayName = 'CodeEditor';
 
-export default PythonEditor;
+export default CodeEditor;
