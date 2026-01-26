@@ -5,8 +5,6 @@ import { Menu } from "lucide-react"
 import {
     Sheet,
     SheetContent,
-    SheetHeader,
-    SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet"
 
@@ -32,9 +30,6 @@ export default function Layout() {
                                 <Menu className="cursor-pointer rounded hover:bg-indigo-50 active:text-indigo-500 h-8 w-8 text-indigo-500" />
                             </SheetTrigger>
                             <SheetContent side="right" className="w-[250px]">
-                                <SheetHeader>
-                                    <SheetTitle>Menu</SheetTitle>
-                                </SheetHeader>
                                 <nav className="flex flex-col gap-4 mt-6">
                                     {navLinks.map((link) => (
                                         <a

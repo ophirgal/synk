@@ -1,10 +1,12 @@
 let peerConnection: RTCPeerConnection | null = null;
 let localStream: MediaStream | null = null;
 let remoteStream: MediaStream | null = null;
+let dataChannel: RTCDataChannel | null = null;
 
 export const getPeerConnection = () => peerConnection;
 export const getLocalStream = () => localStream;
 export const getRemoteStream = () => remoteStream;
+export const getDataChannel = () => dataChannel;
 
 const servers: RTCConfiguration = {
     iceServers: [
@@ -386,9 +388,20 @@ const initLocalStream = async (): Promise<void> => {
 
 const createOfferForRoom = async (
     onIceCandidate: (candidate: RTCIceCandidateInit) => void,
-    onConnectionConnected: () => void
+    onConnectionConnected: () => void,
+    onDataChannelReady?: (channel: RTCDataChannel) => void
 ): Promise<RTCSessionDescriptionInit> => {
-    peerConnection = await new RTCPeerConnection(servers);
+    peerConnection = new RTCPeerConnection(servers);
+
+    // Create data channel BEFORE creating offer (creator side)
+    dataChannel = peerConnection.createDataChannel('yjs-sync', {
+        ordered: true,
+    });
+
+    dataChannel.onopen = () => {
+        console.log('[WebRTC] Data channel opened (creator)');
+        onDataChannelReady?.(dataChannel!);
+    };
 
     localStream?.getTracks().forEach(track => {
         peerConnection?.addTrack(track, localStream!);
@@ -425,12 +438,24 @@ const createOfferForRoom = async (
 const createAnswerForRoom = async (
     offer: RTCSessionDescriptionInit,
     onIceCandidate: (candidate: RTCIceCandidateInit) => void,
-    onConnectionConnected: () => void
+    onConnectionConnected: () => void,
+    onDataChannelReady?: (channel: RTCDataChannel) => void
 ): Promise<RTCSessionDescriptionInit> => {
     if (peerConnection) { // connection was created, return local description as answer
         return peerConnection.localDescription!;
     }
-    peerConnection = await new RTCPeerConnection(servers);
+    peerConnection = new RTCPeerConnection(servers);
+
+    // Listen for data channel from creator (joiner side)
+    peerConnection.ondatachannel = (event) => {
+        dataChannel = event.channel;
+        console.log('[WebRTC] Data channel received (joiner)');
+
+        dataChannel.onopen = () => {
+            console.log('[WebRTC] Data channel opened (joiner)');
+            onDataChannelReady?.(dataChannel!);
+        };
+    };
 
     localStream?.getTracks().forEach(track => {
         peerConnection?.addTrack(track, localStream!);

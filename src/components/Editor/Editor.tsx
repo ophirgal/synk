@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import MonacoEditor from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
+import { MonacoBinding } from "y-monaco";
+import { GripVerticalIcon, Play } from "lucide-react";
+
 import {
     ResizablePanel,
     ResizablePanelGroup,
 } from "@/components/ui/resizable"
-import { GripVerticalIcon, Play } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import {
     Select,
@@ -16,11 +18,15 @@ import {
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner";
 import { getAvailableRuntimes, createRuntime, type RuntimeEngine } from "@/lib/runtime";
+import { useCollaboration } from "@/context/CollaborationContext";
 
 import "./Editor.css"
 
 export default function Editor() {
     const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+    const bindingRef = useRef<MonacoBinding | null>(null);
+
+    const { yText } = useCollaboration();
 
     const [output, setOutput] = useState<string>("");
     const [isReadyToRun, setIsReadyToRun] = useState(false);
@@ -52,9 +58,24 @@ export default function Editor() {
         }
     }, [runtime]);
 
-    const handleEditorMount = (editor: editor.IStandaloneCodeEditor) => {
+    const handleEditorMount = useCallback((editor: editor.IStandaloneCodeEditor) => {
         editorRef.current = editor;
-    };
+
+        // Only set default code if Y.Text is empty (first user in room)
+        if (yText.length === 0 && runtime?.defaultCode) {
+            yText.insert(0, runtime.defaultCode);
+        }
+
+        // Create MonacoBinding to sync Y.Text with Monaco editor
+        const model = editor.getModel();
+        if (model) {
+            bindingRef.current = new MonacoBinding(
+                yText,
+                model,
+                new Set([editor])
+            );
+        }
+    }, [yText, runtime]);
 
     // Load the runtime
     useEffect(() => {
@@ -94,6 +115,14 @@ export default function Editor() {
         }
     }, [runtime]);
 
+    // Cleanup binding on unmount
+    useEffect(() => {
+        return () => {
+            bindingRef.current?.destroy();
+            bindingRef.current = null;
+        };
+    }, []);
+
     if (!runtime) {
         return <div>Failed to load runtime for {selectedLanguage}</div>;
     }
@@ -130,7 +159,6 @@ export default function Editor() {
                 <ResizablePanelGroup className="panels h-full" orientation="vertical">
                     <ResizablePanel className="bg-white" defaultSize={65}>
                         <MonacoEditor
-                            defaultValue={runtime.defaultCode}
                             language={runtime.languageId}
                             onMount={handleEditorMount}
                             options={{

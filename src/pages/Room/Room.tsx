@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router"
 import { toast } from "sonner"
-import { Copy } from "lucide-react"
+import { Copy, Plus } from "lucide-react"
 
 import {
     initLocalStream,
@@ -23,12 +23,14 @@ import { Button } from "@/components/ui/button"
 import { databaseService } from "@/services/FirebaseDatabaseService"
 import type { Room } from "@/services/DatabaseService"
 import { useRoom } from "@/context/RoomContext"
+import { CollaborationProvider, useCollaboration } from "@/context/CollaborationContext"
 
-export default function RoomPage() {
+function RoomContent() {
     const [isPeerJoined, setIsPeerJoined] = useState(false);
     const navigate = useNavigate();
     const pathParams = useParams(); // get id path variable from the router!
     const { roomLink, setCurrentRoomId, copyRoomLink } = useRoom();
+    const { connectDataChannel } = useCollaboration();
     const isJoinAttemptedRef = useRef<boolean>(false);
 
     const handleCreateRoom = async () => {
@@ -47,6 +49,10 @@ export default function RoomPage() {
                 () => {
                     setIsPeerJoined(true);
                     toast.success(`A Peer has successfully joined the room: ${room.id}`);
+                },
+                (channel) => {
+                    console.log('[Room] Data channel ready (creator)');
+                    connectDataChannel(channel);
                 }
             );
 
@@ -113,6 +119,10 @@ export default function RoomPage() {
                 () => {
                     setIsPeerJoined(true);
                     toast.success(`Successfully joined room: ${room.id.slice(0, 6)}...`);
+                },
+                (channel) => {
+                    console.log('[Room] Data channel ready (joiner)');
+                    connectDataChannel(channel);
                 }
             );
 
@@ -171,26 +181,26 @@ export default function RoomPage() {
     return (
         <div className="bg-indigo-50 h-full flex flex-col border-t">
             <nav className="flex border-b h-[50px] justify-between items-center px-4">
-                <div className="flex items-center gap-2">
-                    <div>
-                        <Button onClick={handleCreateRoom} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
-                            Create Room
-                        </Button>
-                    </div>
+                <div className="flex items-center gap-2 max-w-[50%]">
+
                     {roomLink &&
-                        <div id="room-link" className="bg-indigo-50 rounded border text-sm p-2 flex items-center gap-2 w-75">
+                        <div id="room-link" className="bg-indigo-50 rounded border text-sm p-2 flex items-center gap-2 w-full">
                             <p className="text-muted-foreground whitespace-nowrap"><strong>Room:</strong></p>
                             <a
                                 href={roomLink}
-                                className="underline text-blue-600 hover:text-blue-800 truncate whitespace-nowrap select-all max-w-[200px]"
+                                className="underline text-blue-600 hover:text-blue-800 truncate whitespace-nowrap select-all"
                             >
                                 {roomLink}
                             </a>
-                            <Copy className="cursor-pointer hover:text-gray-500 active:text-black h-4 w-4" onClick={handleCopyRoomLink} />
+                            <div>
+                                <Copy className="cursor-pointer hover:text-gray-500 active:text-black h-4 w-4" onClick={handleCopyRoomLink} />
+                            </div>
                         </div>
                     }
                 </div>
-                <p className="invisible">Global Settings Buttons...</p>
+                <Button onClick={handleCreateRoom} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                    <Plus strokeWidth={3} />Create Room
+                </Button>
             </nav >
             <ResizablePanelGroup className="h-full" orientation="horizontal">
                 <ResizablePanel className="problem-panel h-full p-4 overflow-y-scroll" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
@@ -242,4 +252,12 @@ Follow-up: Can you come up with an algorithm that is less than O(n2) time comple
             </ResizablePanelGroup>
         </div >
     )
+}
+
+export default function RoomPage() {
+    return (
+        <CollaborationProvider>
+            <RoomContent />
+        </CollaborationProvider>
+    );
 }
