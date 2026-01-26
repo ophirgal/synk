@@ -389,7 +389,7 @@ const initLocalStream = async (): Promise<void> => {
 const createOfferForRoom = async (
     onIceCandidate: (candidate: RTCIceCandidateInit) => void,
     onConnectionConnected: () => void,
-    onDataChannelReady?: (channel: RTCDataChannel) => void
+    onDataChannelReady: (channel: RTCDataChannel) => void
 ): Promise<RTCSessionDescriptionInit> => {
     peerConnection = new RTCPeerConnection(servers);
 
@@ -400,7 +400,7 @@ const createOfferForRoom = async (
 
     dataChannel.onopen = () => {
         console.log('[WebRTC] Data channel opened (creator)');
-        onDataChannelReady?.(dataChannel!);
+        onDataChannelReady(dataChannel!);
     };
 
     localStream?.getTracks().forEach(track => {
@@ -439,7 +439,7 @@ const createAnswerForRoom = async (
     offer: RTCSessionDescriptionInit,
     onIceCandidate: (candidate: RTCIceCandidateInit) => void,
     onConnectionConnected: () => void,
-    onDataChannelReady?: (channel: RTCDataChannel) => void
+    onDataChannelReady: (channel: RTCDataChannel) => void
 ): Promise<RTCSessionDescriptionInit> => {
     if (peerConnection) { // connection was created, return local description as answer
         return peerConnection.localDescription!;
@@ -453,7 +453,7 @@ const createAnswerForRoom = async (
 
         dataChannel.onopen = () => {
             console.log('[WebRTC] Data channel opened (joiner)');
-            onDataChannelReady?.(dataChannel!);
+            onDataChannelReady(dataChannel!);
         };
     };
 
