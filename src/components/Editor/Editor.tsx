@@ -20,8 +20,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { getAvailableRuntimes, createRuntime, type RuntimeEngine } from "@/lib/runtime";
 import { useCollaboration } from "@/context/CollaborationContext";
 
-import "./Editor.css"
-
 export default function Editor() {
     const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
