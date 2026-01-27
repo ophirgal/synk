@@ -32,6 +32,7 @@ function RoomContent() {
     const { roomLink, setCurrentRoomId, copyRoomLink } = useRoom();
     const { connectDataChannel } = useCollaboration();
     const isJoinAttemptedRef = useRef<boolean>(false);
+    const hrRef = useRef<HTMLDivElement>(null);
 
     const handleCreateRoom = async () => {
         try {
@@ -158,13 +159,17 @@ function RoomContent() {
         copyRoomLink()
     }
 
+    // Initialize the Room
     useEffect(() => {
         (async () => {
             await initLocalStream()
             if (pathParams.id) {
                 setCurrentRoomId(pathParams.id)
                 await joinRoom(pathParams.id)
+                return
             }
+
+            await handleCreateRoom()
         })()
     }, [])
 
@@ -184,7 +189,7 @@ function RoomContent() {
                 <div className="flex items-center gap-2 max-w-[50%]">
 
                     {roomLink &&
-                        <div id="room-link" className="bg-indigo-50 rounded border text-sm p-2 flex items-center gap-2 w-full">
+                        <div id="room-link" className="bg-indigo-50 rounded text-sm flex items-center gap-2 w-full">
                             <p className="text-muted-foreground whitespace-nowrap"><strong>Room:</strong></p>
                             <a
                                 href={roomLink}

@@ -9,10 +9,13 @@ import {
 } from 'react';
 import * as Y from 'yjs';
 import { WebRTCProvider } from '@/lib/collaboration';
+import { createRuntime } from '@/lib/runtime';
 
 interface CollaborationContextType {
     yDoc: Y.Doc;
     yText: Y.Text;
+    currentLanguage: string;
+    setCurrentLanguage: (language: string) => void;
     isConnected: boolean;
     isSynced: boolean;
     connectDataChannel: (channel: RTCDataChannel) => void;
@@ -26,8 +29,18 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
 
     const [isConnected, setIsConnected] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
+    const [currentLanguage, setCurrentLanguage] = useState('python');
+    const [yText, setYText] = useState(yDocRef.current.getText(`${currentLanguage}`));
 
-    const yText = yDocRef.current.getText('monaco');
+    useEffect(() => {
+        const currentYText = yDocRef.current.getText(`${currentLanguage}`);
+        if (currentYText.length === 0) {
+            const runtime = createRuntime(currentLanguage);
+            currentYText.insert(0, runtime?.defaultCode ?? "");
+        }
+        setYText(currentYText);
+
+    }, [currentLanguage]);
 
     useEffect(() => {
         providerRef.current = new WebRTCProvider(yDocRef.current);
@@ -59,6 +72,8 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
             value={{
                 yDoc: yDocRef.current,
                 yText,
+                currentLanguage,
+                setCurrentLanguage,
                 isConnected,
                 isSynced,
                 connectDataChannel,

@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import MonacoEditor from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
 import { MonacoBinding } from "y-monaco";
-import { GripVerticalIcon, Play } from "lucide-react";
+import { GripHorizontal, Play } from "lucide-react";
 
 import {
     ResizablePanel,
     ResizablePanelGroup,
+    ResizableHandle,
 } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,22 +21,22 @@ import { Spinner } from "@/components/ui/spinner";
 import { getAvailableRuntimes, createRuntime, type RuntimeEngine } from "@/lib/runtime";
 import { useCollaboration } from "@/context/CollaborationContext";
 
+
 export default function Editor() {
     const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
 
-    const { yText } = useCollaboration();
+    const { yText, currentLanguage, setCurrentLanguage: setLanguage } = useCollaboration();
 
     const [output, setOutput] = useState<string>("");
     const [isReadyToRun, setIsReadyToRun] = useState(false);
-    const [selectedLanguage, setSelectedLanguage] = useState("python");
 
     const availableRuntimes = useMemo(() => getAvailableRuntimes(), []);
 
     const runtime = useMemo<RuntimeEngine | null>(() => {
         setIsReadyToRun(false);
-        return createRuntime(selectedLanguage);
-    }, [selectedLanguage]);
+        return createRuntime(currentLanguage);
+    }, [currentLanguage]);
 
     const runCode = useCallback(async () => {
         if (!runtime?.isReady()) {
@@ -59,20 +60,32 @@ export default function Editor() {
     const handleEditorMount = useCallback((editor: editor.IStandaloneCodeEditor) => {
         editorRef.current = editor;
 
-        // Only set default code if Y.Text is empty (first user in room)
-        if (yText.length === 0 && runtime?.defaultCode) {
-            yText.insert(0, runtime.defaultCode);
+        if (!editor) return;
+
+        const model = editor.getModel();
+        if (!model) return;
+
+        console.log(`yText.doc?.getText(${runtime?.languageId || ""}).length\n`, yText.doc?.getText(runtime?.languageId).length)
+
+        if (yText.doc?.getText(runtime?.languageId).length === 0) {
+            yText.doc.getText(runtime?.languageId).delete(0, yText.length);
+            yText.insert(0, runtime?.defaultCode ?? "");
         }
 
-        // Create MonacoBinding to sync Y.Text with Monaco editor
-        const model = editor.getModel();
-        if (model) {
-            bindingRef.current = new MonacoBinding(
-                yText,
-                model,
-                new Set([editor])
-            );
-        }
+        // Destroy old binding if it exists
+        bindingRef.current?.destroy();
+
+        // Rebind MonacoBinding when yText changes (language switch)
+        bindingRef.current = new MonacoBinding(
+            yText,
+            model,
+            new Set([editor])
+        );
+
+        return () => {
+            bindingRef.current?.destroy();
+            bindingRef.current = null;
+        };
     }, [yText, runtime]);
 
     // Load the runtime
@@ -83,9 +96,9 @@ export default function Editor() {
 
         const loadRuntime = async () => {
             try {
-                await runtime.load((text) => {
+                await runtime.load((output) => {
                     if (!disposed) {
-                        setOutput((prev) => prev + text);
+                        setOutput((prev) => prev + output);
                     }
                 });
                 if (!disposed) {
@@ -99,6 +112,7 @@ export default function Editor() {
         };
 
         loadRuntime();
+        setOutput(""); // Reset output when runtime changes
 
         return () => {
             disposed = true;
@@ -106,29 +120,10 @@ export default function Editor() {
         };
     }, [runtime]);
 
-    // Reset output when runtime changes
-    useEffect(() => {
-        if (runtime) {
-            setOutput("");
-        }
-    }, [runtime]);
-
-    // Cleanup binding on unmount
-    useEffect(() => {
-        return () => {
-            bindingRef.current?.destroy();
-            bindingRef.current = null;
-        };
-    }, []);
-
-    if (!runtime) {
-        return <div>Failed to load runtime for {selectedLanguage}</div>;
-    }
-
     return (
         <div className="flex flex-col h-full gap-2">
             <div className="flex justify-between">
-                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                <Select value={currentLanguage} onValueChange={setLanguage}>
                     <SelectTrigger size="sm" className="w-[140px] bg-white">
                         <SelectValue placeholder="Select language" />
                     </SelectTrigger>
@@ -153,11 +148,11 @@ export default function Editor() {
                     }
                 </Button>
             </div>
-            <div className="h-full" key={runtime.id}>
+            <div className="h-full" key={runtime?.id}>
                 <ResizablePanelGroup className="panels h-full" orientation="vertical">
                     <ResizablePanel className="bg-white" defaultSize={65}>
                         <MonacoEditor
-                            language={runtime.languageId}
+                            language={runtime?.languageId}
                             onMount={handleEditorMount}
                             options={{
                                 minimap: { enabled: false },
@@ -165,11 +160,12 @@ export default function Editor() {
                                 scrollBeyondLastLine: false,
                                 automaticLayout: true,
                             }}
+                            loading={<><Spinner data-icon="inline-start" className="mr-1" /> Loading...</>}
                         />
                     </ResizablePanel>
-                    <div className="w-full h-4 flex flex-col justify-center items-center">
-                        <GripVerticalIcon className="size-2.5 rotate-90" />
-                    </div>
+                    <ResizableHandle withHandle
+                        className="flex justify-center items-center w-full h-[15px] bg-indigo-50 hover:bg-indigo-100"
+                        customHandle={<GripHorizontal className="size-2.5" />} />
                     <ResizablePanel id="output-panel" className="border rounded p-2 pb-2 bg-gray-50 text-gray-500 overflow-y-scroll" defaultSize={35}>
                         <div className="text-xs text-left">
                             {
