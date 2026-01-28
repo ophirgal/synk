@@ -20,6 +20,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { runtimeRegistry, type RuntimeEngine } from "@/lib/runtimes";
 import { useCollaboration } from "@/context/CollaborationContext";
+import { useTheme } from "@/context/ThemeContext";
 
 
 export default function Editor() {
@@ -28,6 +29,7 @@ export default function Editor() {
     const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
     const { yDoc, currentLanguage, setCurrentLanguage } = useCollaboration();
+    const { isDarkMode } = useTheme();
 
     const runtime = useMemo<RuntimeEngine>(() => runtimeRegistry[currentLanguage], [currentLanguage]);
 
@@ -138,6 +140,7 @@ export default function Editor() {
                         <MonacoEditor
                             language={runtime?.languageId}
                             onMount={handleEditorMount}
+                            theme={isDarkMode ? "vs-dark" : "light"}
                             options={{
                                 minimap: { enabled: false },
                                 fontSize: 14,
@@ -148,9 +151,9 @@ export default function Editor() {
                         />
                     </ResizablePanel>
                     <ResizableHandle withHandle
-                        className="flex justify-center items-center w-full h-[15px] bg-indigo-50 hover:bg-indigo-100"
+                        className="flex justify-center items-center w-full h-[15px] bg-transparent hover:bg-indigo-100 dark:hover:bg-indigo-900"
                         customHandle={<GripHorizontal className="size-2.5" />} />
-                    <ResizablePanel id="output-panel" className="border rounded p-2 pb-2 bg-gray-50 text-gray-500 overflow-y-scroll" defaultSize={35}>
+                    <ResizablePanel id="output-panel" className="border rounded p-2 pb-2 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 overflow-y-scroll" defaultSize={35}>
                         <div className="text-xs text-left">
                             {
                                 output ?

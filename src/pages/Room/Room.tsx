@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router"
 import { toast } from "sonner"
-import { Copy, Plus } from "lucide-react"
+import { Copy, Plus, Moon, Sun } from "lucide-react"
 
 import {
     initLocalStream,
@@ -24,6 +24,8 @@ import { databaseService } from "@/services/FirebaseDatabaseService"
 import type { Room } from "@/services/DatabaseService"
 import { useRoom } from "@/context/RoomContext"
 import { CollaborationProvider, useCollaboration } from "@/context/CollaborationContext"
+import { useTheme } from "@/context/ThemeContext"
+
 
 function RoomContent() {
     const [isPeerJoined, setIsPeerJoined] = useState(false);
@@ -32,6 +34,8 @@ function RoomContent() {
     const { roomLink, setCurrentRoomId, copyRoomLink } = useRoom();
     const { connectDataChannel } = useCollaboration();
     const isJoinAttemptedRef = useRef<boolean>(false);
+    const { isDarkMode, setIsDarkMode } = useTheme();
+
 
     const handleCreateRoom = async () => {
         try {
@@ -154,9 +158,9 @@ function RoomContent() {
         }
     }
 
-    const handleCopyRoomLink = () => {
-        copyRoomLink()
-    }
+    const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode)
+
+    const handleCopyRoomLink = () => copyRoomLink()
 
     // Initialize the Room
     useEffect(() => {
@@ -183,12 +187,12 @@ function RoomContent() {
     }, [isPeerJoined])
 
     return (
-        <div className="bg-indigo-50 h-full flex flex-col border-t">
+        <div className="h-full flex flex-col border-t">
             <nav className="flex border-b h-[50px] justify-between items-center px-4">
                 <div className="flex items-center gap-2 max-w-[50%]">
                     {roomLink &&
-                        <div id="room-link" className="bg-indigo-50 rounded text-sm flex items-center gap-2 w-full">
-                            <p className="text-muted-foreground whitespace-nowrap"><strong>Room:</strong></p>
+                        <div id="room-link" className="text-sm flex items-center gap-2 w-full">
+                            <p className="text-muted-foreground dark:text-gray-100 whitespace-nowrap"><strong>Room:</strong></p>
                             <a
                                 href={roomLink}
                                 className="underline text-blue-600 hover:text-blue-800 truncate whitespace-nowrap select-all"
@@ -201,13 +205,18 @@ function RoomContent() {
                         </div>
                     }
                 </div>
-                <Button onClick={handleCreateRoom} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
-                    <Plus strokeWidth={3} />Create Room
-                </Button>
+                <div className="flex gap-2">
+                    <Button onClick={handleToggleDarkMode} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                        {isDarkMode ? <Sun strokeWidth={3} /> : <Moon strokeWidth={3} />}
+                    </Button>
+                    <Button onClick={handleCreateRoom} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                        <Plus strokeWidth={3} />Create Room
+                    </Button>
+                </div>
             </nav >
             <ResizablePanelGroup className="h-full" orientation="horizontal">
                 <ResizablePanel className="problem-panel h-full p-4 overflow-y-scroll" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
-                    <p className="bg-indigo-100 rounded p-4 overflow-y-scroll text-left" style={{ whiteSpace: "pre-line" }}>
+                    <p className="dark:bg-indigo-950 bg-indigo-100 rounded p-4 overflow-y-scroll text-left" style={{ whiteSpace: "pre-line" }}>
                         <span className="text-center"><strong>Two Sum</strong></span>
                         <br />
                         {

@@ -19,7 +19,7 @@ export default function Layout() {
     ]
 
     return (
-        <div className="flex flex-col h-screen w-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="flex flex-col h-screen w-screen bg-gradient-to-br dafrom-blue-50 to-indigo-100 dark:from-black dark:to-indigo-800">
             <header className="flex items-center justify-between px-8 h-[75px]">
                 <a href="/" className="text-5xl font-bold no-underline text-indigo-500 hover:text-indigo-400 active:text-indigo-600 transition-colors">[synk]</a>
 
@@ -51,7 +51,7 @@ export default function Layout() {
                             <a
                                 key={link.label}
                                 href={link.href}
-                                className="text-indigo-500 hover:text-indigo-400 active:text-indigo-600"
+                                className="text-indigo-500 dark:text-indigo-100 hover:text-indigo-400 active:text-indigo-600"
                             >
                                 {link.label}
                             </a>
