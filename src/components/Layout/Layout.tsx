@@ -21,13 +21,13 @@ export default function Layout() {
     return (
         <div className="flex flex-col h-screen w-screen bg-gradient-to-br dafrom-blue-50 to-indigo-100 dark:from-black dark:to-indigo-800">
             <header className="flex items-center justify-between px-8 h-[75px]">
-                <a href="/" className="text-5xl font-bold no-underline text-indigo-500 hover:text-indigo-400 active:text-indigo-600 transition-colors">[synk]</a>
+                <a href="/" className="text-5xl font-bold no-underline text-indigo-500 hover:text-indigo-400 dark:text-indigo-400 dark:hover:text-indigo-300 active:text-indigo-600 transition-colors">[synk]</a>
 
                 {isRoomPage ? (
                     <div className="flex items-center justify-end gap-2">
                         <Sheet>
                             <SheetTrigger asChild>
-                                <Menu className="cursor-pointer rounded hover:bg-indigo-50 active:text-indigo-500 h-8 w-8 text-indigo-500" />
+                                <Menu className="cursor-pointer rounded text-indigo-500 hover:text-indigo-400 h-8 w-8" />
                             </SheetTrigger>
                             <SheetContent side="right" className="w-[250px]">
                                 <nav className="flex flex-col gap-4 mt-6">

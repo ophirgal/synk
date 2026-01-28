@@ -24,7 +24,7 @@ export class PythonRuntime implements RuntimeEngine {
 # 1. Get the current datetime object
 current_time = datetime.now()
 
-# 2. Format the datetime object into a specific string format (e.g., YYYY-MM-DD HH:MM:SS)
+# 2. Format the datetime object into a specific string format
 formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S:%f")[:-3]
 
 # 3. Print the result
