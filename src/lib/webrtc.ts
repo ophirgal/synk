@@ -399,7 +399,7 @@ const createOfferForRoom = async (
     });
 
     dataChannel.onopen = () => {
-        console.log('[WebRTC] Data channel opened (creator)');
+        // handle data channel opened (creator side);
         onDataChannelReady(dataChannel!);
     };
 
@@ -452,7 +452,7 @@ const createAnswerForRoom = async (
         console.log('[WebRTC] Data channel received (joiner)');
 
         dataChannel.onopen = () => {
-            console.log('[WebRTC] Data channel opened (joiner)');
+            // handle data channel opened (joiner side);
             onDataChannelReady(dataChannel!);
         };
     };

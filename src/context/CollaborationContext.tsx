@@ -9,11 +9,10 @@ import {
 } from 'react';
 import * as Y from 'yjs';
 import { WebRTCProvider } from '@/lib/collaboration';
-import { createRuntime } from '@/lib/runtime';
+import { runtimeRegistry } from '@/lib/runtimes';
 
 interface CollaborationContextType {
     yDoc: Y.Doc;
-    yText: Y.Text;
     currentLanguage: string;
     setCurrentLanguage: (language: string) => void;
     isConnected: boolean;
@@ -30,18 +29,8 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     const [isConnected, setIsConnected] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
     const [currentLanguage, setCurrentLanguage] = useState('python');
-    const [yText, setYText] = useState(yDocRef.current.getText(`${currentLanguage}`));
 
-    useEffect(() => {
-        const currentYText = yDocRef.current.getText(`${currentLanguage}`);
-        if (currentYText.length === 0) {
-            const runtime = createRuntime(currentLanguage);
-            currentYText.insert(0, runtime?.defaultCode ?? "");
-        }
-        setYText(currentYText);
-
-    }, [currentLanguage]);
-
+    // Initialize runtime engines and the WebRTC provider
     useEffect(() => {
         providerRef.current = new WebRTCProvider(yDocRef.current);
 
@@ -60,6 +49,16 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         };
     }, []);
 
+    // Display default code for current language if editor is empty
+    useEffect(() => {
+        const runtime = runtimeRegistry[currentLanguage];
+        const yText = yDocRef.current.getText(`${currentLanguage}`);
+        if (runtime && yText.toString().length === 0) {
+            yText.insert(0, runtime.defaultCode);
+        }
+    }, [currentLanguage]);
+
+
     const connectDataChannel = useCallback((channel: RTCDataChannel) => {
         if (providerRef.current) {
             providerRef.current.connect(channel);
@@ -71,7 +70,6 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         <CollaborationContext.Provider
             value={{
                 yDoc: yDocRef.current,
-                yText,
                 currentLanguage,
                 setCurrentLanguage,
                 isConnected,

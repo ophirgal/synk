@@ -43,15 +43,6 @@ export interface RuntimeEngine {
 }
 
 /**
- * Metadata about a runtime engine for display in the UI.
- */
-export interface RuntimeEngineInfo {
-    id: string;
-    languageName: string;
-    fileExtension: string;
-}
-
-/**
  * Factory function type for creating runtime engines.
  */
 export type RuntimeEngineFactory = () => RuntimeEngine;

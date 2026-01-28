@@ -18,28 +18,21 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner";
-import { getAvailableRuntimes, createRuntime, type RuntimeEngine } from "@/lib/runtime";
+import { runtimeRegistry, type RuntimeEngine } from "@/lib/runtimes";
 import { useCollaboration } from "@/context/CollaborationContext";
 
 
 export default function Editor() {
-    const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-    const bindingRef = useRef<MonacoBinding | null>(null);
-
-    const { yText, currentLanguage, setCurrentLanguage: setLanguage } = useCollaboration();
-
     const [output, setOutput] = useState<string>("");
     const [isReadyToRun, setIsReadyToRun] = useState(false);
+    const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+    const bindingRef = useRef<MonacoBinding | null>(null);
+    const { yDoc, currentLanguage, setCurrentLanguage } = useCollaboration();
 
-    const availableRuntimes = useMemo(() => getAvailableRuntimes(), []);
+    const runtime = useMemo<RuntimeEngine>(() => runtimeRegistry[currentLanguage], [currentLanguage]);
 
-    const runtime = useMemo<RuntimeEngine | null>(() => {
-        setIsReadyToRun(false);
-        return createRuntime(currentLanguage);
-    }, [currentLanguage]);
-
-    const runCode = useCallback(async () => {
-        if (!runtime?.isReady()) {
+    const handleRun = useCallback(async () => {
+        if (!runtime.isReady()) {
             setOutput("Runtime is still loading...");
             return;
         }
@@ -65,19 +58,12 @@ export default function Editor() {
         const model = editor.getModel();
         if (!model) return;
 
-        console.log(`yText.doc?.getText(${runtime?.languageId || ""}).length\n`, yText.doc?.getText(runtime?.languageId).length)
-
-        if (yText.doc?.getText(runtime?.languageId).length === 0) {
-            yText.doc.getText(runtime?.languageId).delete(0, yText.length);
-            yText.insert(0, runtime?.defaultCode ?? "");
-        }
-
         // Destroy old binding if it exists
         bindingRef.current?.destroy();
 
         // Rebind MonacoBinding when yText changes (language switch)
         bindingRef.current = new MonacoBinding(
-            yText,
+            yDoc.getText(runtime.languageId),
             model,
             new Set([editor])
         );
@@ -86,7 +72,7 @@ export default function Editor() {
             bindingRef.current?.destroy();
             bindingRef.current = null;
         };
-    }, [yText, runtime]);
+    }, [runtime]);
 
     // Load the runtime
     useEffect(() => {
@@ -123,19 +109,17 @@ export default function Editor() {
     return (
         <div className="flex flex-col h-full gap-2">
             <div className="flex justify-between">
-                <Select value={currentLanguage} onValueChange={setLanguage}>
+                <Select value={currentLanguage} onValueChange={setCurrentLanguage}>
                     <SelectTrigger size="sm" className="w-[140px] bg-white">
                         <SelectValue placeholder="Select language" />
                     </SelectTrigger>
                     <SelectContent>
-                        {availableRuntimes.map((rt) => (
-                            <SelectItem key={rt.id} value={rt.id}>
-                                {rt.languageName}
-                            </SelectItem>
+                        {Object.keys(runtimeRegistry).map((k) => (
+                            <SelectItem key={k} value={runtimeRegistry[k].id}>{runtimeRegistry[k].languageName}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
-                <Button disabled={!isReadyToRun} onClick={runCode} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                <Button disabled={!isReadyToRun} onClick={handleRun} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
                     {isReadyToRun ?
                         <>
                             <Play className="h-4 w-4" />

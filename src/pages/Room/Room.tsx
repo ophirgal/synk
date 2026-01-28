@@ -32,7 +32,6 @@ function RoomContent() {
     const { roomLink, setCurrentRoomId, copyRoomLink } = useRoom();
     const { connectDataChannel } = useCollaboration();
     const isJoinAttemptedRef = useRef<boolean>(false);
-    const hrRef = useRef<HTMLDivElement>(null);
 
     const handleCreateRoom = async () => {
         try {
@@ -169,7 +168,7 @@ function RoomContent() {
                 return
             }
 
-            await handleCreateRoom()
+            // await handleCreateRoom()
         })()
     }, [])
 
@@ -187,7 +186,6 @@ function RoomContent() {
         <div className="bg-indigo-50 h-full flex flex-col border-t">
             <nav className="flex border-b h-[50px] justify-between items-center px-4">
                 <div className="flex items-center gap-2 max-w-[50%]">
-
                     {roomLink &&
                         <div id="room-link" className="bg-indigo-50 rounded text-sm flex items-center gap-2 w-full">
                             <p className="text-muted-foreground whitespace-nowrap"><strong>Room:</strong></p>
