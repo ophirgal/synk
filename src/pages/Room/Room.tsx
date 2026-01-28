@@ -37,7 +37,7 @@ function RoomContent() {
     const { isDarkMode, setIsDarkMode } = useTheme();
 
 
-    const handleCreateRoom = async () => {
+    const createRoom = async () => {
         try {
             // Create room in database
             const room = await databaseService.createRoom();
@@ -158,9 +158,9 @@ function RoomContent() {
         }
     }
 
-    const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode)
-
     const handleCopyRoomLink = () => copyRoomLink()
+    const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode)
+    const handleNewRoom = () => window.open('/rooms', '_blank');
 
     // Initialize the Room
     useEffect(() => {
@@ -172,7 +172,7 @@ function RoomContent() {
                 return
             }
 
-            await handleCreateRoom()
+            await createRoom()
         })()
     }, [])
 
@@ -209,8 +209,8 @@ function RoomContent() {
                     <Button onClick={handleToggleDarkMode} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
                         {isDarkMode ? <Sun strokeWidth={3} /> : <Moon strokeWidth={3} />}
                     </Button>
-                    <Button onClick={handleCreateRoom} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
-                        <Plus strokeWidth={3} />Create Room
+                    <Button onClick={handleNewRoom} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                        <Plus strokeWidth={3} />New Room
                     </Button>
                 </div>
             </nav >
