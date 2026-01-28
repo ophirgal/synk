@@ -168,7 +168,7 @@ function RoomContent() {
                 return
             }
 
-            // await handleCreateRoom()
+            await handleCreateRoom()
         })()
     }, [])
 
