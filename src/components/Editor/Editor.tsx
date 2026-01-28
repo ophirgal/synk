@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import MonacoEditor from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
+import { MonacoBinding } from "y-monaco";
+import { GripHorizontal, Play } from "lucide-react";
+
 import {
     ResizablePanel,
     ResizablePanelGroup,
+    ResizableHandle,
 } from "@/components/ui/resizable"
-import { GripVerticalIcon, Play } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import {
     Select,
@@ -15,26 +18,21 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner";
-import { getAvailableRuntimes, createRuntime, type RuntimeEngine } from "@/lib/runtime";
+import { runtimeRegistry, type RuntimeEngine } from "@/lib/runtimes";
+import { useCollaboration } from "@/context/CollaborationContext";
 
-import "./Editor.css"
 
 export default function Editor() {
-    const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-
     const [output, setOutput] = useState<string>("");
     const [isReadyToRun, setIsReadyToRun] = useState(false);
-    const [selectedLanguage, setSelectedLanguage] = useState("python");
+    const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+    const bindingRef = useRef<MonacoBinding | null>(null);
+    const { yDoc, currentLanguage, setCurrentLanguage } = useCollaboration();
 
-    const availableRuntimes = useMemo(() => getAvailableRuntimes(), []);
+    const runtime = useMemo<RuntimeEngine>(() => runtimeRegistry[currentLanguage], [currentLanguage]);
 
-    const runtime = useMemo<RuntimeEngine | null>(() => {
-        setIsReadyToRun(false);
-        return createRuntime(selectedLanguage);
-    }, [selectedLanguage]);
-
-    const runCode = useCallback(async () => {
-        if (!runtime?.isReady()) {
+    const handleRun = useCallback(async () => {
+        if (!runtime.isReady()) {
             setOutput("Runtime is still loading...");
             return;
         }
@@ -52,9 +50,29 @@ export default function Editor() {
         }
     }, [runtime]);
 
-    const handleEditorMount = (editor: editor.IStandaloneCodeEditor) => {
+    const handleEditorMount = useCallback((editor: editor.IStandaloneCodeEditor) => {
         editorRef.current = editor;
-    };
+
+        if (!editor) return;
+
+        const model = editor.getModel();
+        if (!model) return;
+
+        // Destroy old binding if it exists
+        bindingRef.current?.destroy();
+
+        // Rebind MonacoBinding when yText changes (language switch)
+        bindingRef.current = new MonacoBinding(
+            yDoc.getText(runtime.languageId),
+            model,
+            new Set([editor])
+        );
+
+        return () => {
+            bindingRef.current?.destroy();
+            bindingRef.current = null;
+        };
+    }, [runtime]);
 
     // Load the runtime
     useEffect(() => {
@@ -64,9 +82,9 @@ export default function Editor() {
 
         const loadRuntime = async () => {
             try {
-                await runtime.load((text) => {
+                await runtime.load((output) => {
                     if (!disposed) {
-                        setOutput((prev) => prev + text);
+                        setOutput((prev) => prev + output);
                     }
                 });
                 if (!disposed) {
@@ -80,6 +98,7 @@ export default function Editor() {
         };
 
         loadRuntime();
+        setOutput(""); // Reset output when runtime changes
 
         return () => {
             disposed = true;
@@ -87,33 +106,20 @@ export default function Editor() {
         };
     }, [runtime]);
 
-    // Reset output when runtime changes
-    useEffect(() => {
-        if (runtime) {
-            setOutput("");
-        }
-    }, [runtime]);
-
-    if (!runtime) {
-        return <div>Failed to load runtime for {selectedLanguage}</div>;
-    }
-
     return (
         <div className="flex flex-col h-full gap-2">
             <div className="flex justify-between">
-                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                <Select value={currentLanguage} onValueChange={setCurrentLanguage}>
                     <SelectTrigger size="sm" className="w-[140px] bg-white">
                         <SelectValue placeholder="Select language" />
                     </SelectTrigger>
                     <SelectContent>
-                        {availableRuntimes.map((rt) => (
-                            <SelectItem key={rt.id} value={rt.id}>
-                                {rt.languageName}
-                            </SelectItem>
+                        {Object.keys(runtimeRegistry).map((k) => (
+                            <SelectItem key={k} value={runtimeRegistry[k].id}>{runtimeRegistry[k].languageName}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
-                <Button disabled={!isReadyToRun} onClick={runCode} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                <Button disabled={!isReadyToRun} onClick={handleRun} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
                     {isReadyToRun ?
                         <>
                             <Play className="h-4 w-4" />
@@ -126,12 +132,11 @@ export default function Editor() {
                     }
                 </Button>
             </div>
-            <div className="h-full" key={runtime.id}>
+            <div className="h-full" key={runtime?.id}>
                 <ResizablePanelGroup className="panels h-full" orientation="vertical">
                     <ResizablePanel className="bg-white" defaultSize={65}>
                         <MonacoEditor
-                            defaultValue={runtime.defaultCode}
-                            language={runtime.languageId}
+                            language={runtime?.languageId}
                             onMount={handleEditorMount}
                             options={{
                                 minimap: { enabled: false },
@@ -139,11 +144,12 @@ export default function Editor() {
                                 scrollBeyondLastLine: false,
                                 automaticLayout: true,
                             }}
+                            loading={<><Spinner data-icon="inline-start" className="mr-1" /> Loading...</>}
                         />
                     </ResizablePanel>
-                    <div className="w-full h-4 flex flex-col justify-center items-center">
-                        <GripVerticalIcon className="size-2.5 rotate-90" />
-                    </div>
+                    <ResizableHandle withHandle
+                        className="flex justify-center items-center w-full h-[15px] bg-indigo-50 hover:bg-indigo-100"
+                        customHandle={<GripHorizontal className="size-2.5" />} />
                     <ResizablePanel id="output-panel" className="border rounded p-2 pb-2 bg-gray-50 text-gray-500 overflow-y-scroll" defaultSize={35}>
                         <div className="text-xs text-left">
                             {
