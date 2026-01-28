@@ -153,7 +153,7 @@ export default function Editor() {
                     <ResizableHandle withHandle
                         className="flex justify-center items-center w-full h-[15px] bg-transparent hover:bg-indigo-100 dark:hover:bg-indigo-900"
                         customHandle={<GripHorizontal className="size-2.5" />} />
-                    <ResizablePanel id="output-panel" className="border rounded p-2 pb-2 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 overflow-y-scroll" defaultSize={35}>
+                    <ResizablePanel id="output-panel" className="border rounded p-2 pb-2 bg-gray-50 dark:bg-neutral-800 text-gray-500 dark:text-gray-400 overflow-y-scroll" defaultSize={35}>
                         <div className="text-xs text-left">
                             {
                                 output ?
