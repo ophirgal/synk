@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router"
 import { toast } from "sonner"
-import { Copy, Plus, Moon, Sun } from "lucide-react"
+import { Copy, Plus, Menu, Moon, Sun, ChevronLeft, ChevronRight } from "lucide-react"
 
+import { navLinks } from "@/constants/constants"
 import {
-    initLocalStream,
+    attachLocalStreamToVideoElement,
+    attachRemoteStreamToVideoElement,
     createOfferForRoom,
     createAnswerForRoom,
     setRemoteAnswer,
     addRemoteIceCandidate,
-    getRemoteStream,
     isRemoteDescriptionSet,
     getPeerConnection,
 } from "@/lib/webrtc"
@@ -18,6 +19,11 @@ import {
     ResizablePanel,
     ResizablePanelGroup,
 } from "@/components/ui/resizable"
+import {
+    Sheet,
+    SheetContent,
+    SheetTrigger,
+} from "@/components/ui/sheet"
 import Editor from "@/components/Editor/Editor"
 import { Button } from "@/components/ui/button"
 import { databaseService } from "@/services/FirebaseDatabaseService"
@@ -29,11 +35,13 @@ import { useTheme } from "@/context/ThemeContext"
 
 function RoomContent() {
     const [isPeerJoined, setIsPeerJoined] = useState(false);
+    const [isLeftPanelShown, setIsLeftPanelShown] = useState(true);
+    const [isRightPanelShown, setIsRightPanelShown] = useState(true);
+    const isJoinAttemptedRef = useRef<boolean>(false);
     const navigate = useNavigate();
     const pathParams = useParams(); // get id path variable from the router!
     const { roomLink, setCurrentRoomId, copyRoomLink } = useRoom();
     const { connectDataChannel } = useCollaboration();
-    const isJoinAttemptedRef = useRef<boolean>(false);
     const { isDarkMode, setIsDarkMode } = useTheme();
 
 
@@ -160,12 +168,15 @@ function RoomContent() {
 
     const handleCopyRoomLink = () => copyRoomLink()
     const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode)
-    const handleNewRoom = () => window.open('/rooms', '_blank');
+    const handleNewRoom = () => window.open('/rooms', '_blank')
+    const handleShowLeftPanel = () => setIsLeftPanelShown(true)
+    const handleCollapseRightPanel = () => setIsRightPanelShown(false)
+    const handleShowRightPanel = () => setIsRightPanelShown(true)
 
     // Initialize the Room
     useEffect(() => {
         (async () => {
-            await initLocalStream()
+            await attachLocalStreamToVideoElement('local-video')
             if (pathParams.id) {
                 setCurrentRoomId(pathParams.id)
                 await joinRoom(pathParams.id)
@@ -176,19 +187,23 @@ function RoomContent() {
         })()
     }, [])
 
+    // Update remote video when peer joins
     useEffect(() => {
         if (isPeerJoined) {
-            const remoteStream = getRemoteStream();
-            const remoteVideo = document.getElementById('peer-user') as HTMLVideoElement;
-            if (remoteVideo && remoteStream) {
-                remoteVideo.srcObject = remoteStream;
-            }
+            attachRemoteStreamToVideoElement('remote-video')
         }
     }, [isPeerJoined])
+
+    // Ensure streams arre attached to video elements when right panel is shown
+    useEffect(() => {
+        attachLocalStreamToVideoElement('local-video')
+        attachRemoteStreamToVideoElement('remote-video')
+    }, [isRightPanelShown])
 
     return (
         <div className="h-full flex flex-col border-t">
             <nav className="flex border-b h-[50px] justify-between items-center px-4">
+                <a href="/" className="text-3xl font-bold no-underline text-indigo-500 hover:text-indigo-400 dark:text-indigo-400 dark:hover:text-indigo-300 active:text-indigo-600 transition-colors">[synk]</a>
                 <div className="flex items-center gap-2 max-w-[50%]">
                     {roomLink &&
                         <div id="room-link" className="text-sm flex items-center gap-2 w-full">
@@ -212,15 +227,37 @@ function RoomContent() {
                     <Button onClick={handleNewRoom} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
                         <Plus strokeWidth={3} />New Room
                     </Button>
+                    <Sheet>
+                        <SheetTrigger asChild>
+                            <Menu className="cursor-pointer rounded text-indigo-500 hover:text-indigo-400 h-8 w-8 ml-2" />
+                        </SheetTrigger>
+                        <SheetContent side="right" className="w-[250px]">
+                            <nav className="flex flex-col gap-4 mt-6">
+                                {navLinks.map((link) => (
+                                    <a
+                                        key={link.label}
+                                        href={link.href}
+                                        className="text-lg text-indigo-500 hover:text-indigo-400 active:text-indigo-600 transition-colors"
+                                    >
+                                        {link.label}
+                                    </a>
+                                ))}
+                            </nav>
+                        </SheetContent>
+                    </Sheet>
                 </div>
             </nav >
             <ResizablePanelGroup className="h-full" orientation="horizontal">
-                <ResizablePanel className="problem-panel h-full p-4 overflow-y-scroll" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
-                    <p className="dark:bg-indigo-950 bg-indigo-100 rounded p-4 overflow-y-scroll text-left" style={{ whiteSpace: "pre-line" }}>
-                        <span className="text-center"><strong>Two Sum</strong></span>
-                        <br />
-                        {
-                            `Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.
+                {/* Text Editor Panel */}
+                {isLeftPanelShown &&
+                    <>
+                        <ResizablePanel className="relative h-full p-4" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
+                            <ChevronLeft className="absolute top-0 right-[-1px] cursor-pointer hover:text-gray-500 active:text-black h-5 w-5" onClick={() => setIsLeftPanelShown(false)} />
+                            <p className="dark:bg-indigo-950 bg-indigo-100 rounded p-4 overflow-y-scroll h-full text-left" style={{ whiteSpace: "pre-line" }}>
+                                <span className="text-center"><strong>Two Sum</strong></span>
+                                <br />
+                                {
+                                    `Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.
 You may assume that each input would have exactly one solution, and you may not use the same element twice.
 You can return the answer in any order.
  
@@ -247,21 +284,32 @@ Only one valid answer exists.
 
  
 Follow-up: Can you come up with an algorithm that is less than O(n2) time complexity?`
-                        }
-                    </p>
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel className="editor-panel h-full p-4" defaultSize={50}>
+                                }
+                            </p>
+                        </ResizablePanel>
+                        <ResizableHandle withHandle />
+                    </>
+                }
+                {/* Code Editor Panel */}
+                <ResizablePanel className="relative editor-panel h-full p-4" defaultSize={50}>
+                    {!isLeftPanelShown && <ChevronRight className="absolute top-0 left-[-1px] cursor-pointer hover:text-gray-500 active:text-black h-5 w-5" onClick={handleShowLeftPanel} />}
+                    {!isRightPanelShown && <ChevronLeft className="absolute top-0 right-[-1px] cursor-pointer hover:text-gray-500 active:text-black h-5 w-5" onClick={handleShowRightPanel} />}
                     <Editor />
                 </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel className="video-panel h-full p-4 flex flex-col h-full justify-center items-center gap-2" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
-                    <div className="flex-1 flex flex-col justify-center items-center gap-4 h-100">
-                        <video id="curr-user" className="rounded object-cover max-h-[45%] w-full" autoPlay playsInline muted></video>
-                        <video id="peer-user" className={`rounded object-cover max-h-[45%] w-full ${isPeerJoined ? '' : 'hidden'}`} autoPlay playsInline></video>
-                    </div>
-                </ResizablePanel>
-            </ResizablePanelGroup>
+                {/* Video Panel */}
+                {isRightPanelShown &&
+                    <>
+                        <ResizableHandle withHandle />
+                        <ResizablePanel className="relative h-full p-4 flex flex-col justify-center items-center gap-2" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
+                            <ChevronRight className="absolute top-0 left-[-1px] cursor-pointer hover:text-gray-500 active:text-black h-5 w-5" onClick={handleCollapseRightPanel} />
+                            <div className="flex-1 flex flex-col justify-center items-center gap-4 h-100">
+                                <video id="local-video" className="rounded object-cover max-h-[45%] w-full" autoPlay playsInline muted></video>
+                                <video id="remote-video" className={`rounded object-cover max-h-[45%] w-full ${isPeerJoined ? '' : 'hidden'}`} autoPlay playsInline></video>
+                            </div>
+                        </ResizablePanel>
+                    </>
+                }
+            </ResizablePanelGroup >
         </div >
     )
 }

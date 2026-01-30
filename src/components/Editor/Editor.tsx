@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import MonacoEditor from "@monaco-editor/react";
-import type { editor } from "monaco-editor";
+import { editor as monaco } from "monaco-editor";
 import { MonacoBinding } from "y-monaco";
 import { GripHorizontal, Play } from "lucide-react";
 
@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner";
+// import CursorWidget from "./CursorWidget"; // TODO: use this for remote cursor marker
 import { runtimeRegistry, type RuntimeEngine } from "@/lib/runtimes";
 import { useCollaboration } from "@/context/CollaborationContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -26,7 +27,8 @@ import { useTheme } from "@/context/ThemeContext";
 export default function Editor() {
     const [output, setOutput] = useState<string>("");
     const [isReadyToRun, setIsReadyToRun] = useState(false);
-    const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+    const [username, _] = useState<string>("user1"); // TODO: use this for local username
+    const editorRef = useRef<monaco.IStandaloneCodeEditor | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
     const { yDoc, currentLanguage, setCurrentLanguage } = useCollaboration();
     const { isDarkMode } = useTheme();
@@ -52,13 +54,26 @@ export default function Editor() {
         }
     }, [runtime]);
 
-    const handleEditorMount = useCallback((editor: editor.IStandaloneCodeEditor) => {
+    const handleEditorMount = useCallback((editor: monaco.IStandaloneCodeEditor) => {
         editorRef.current = editor;
-
         if (!editor) return;
 
         const model = editor.getModel();
         if (!model) return;
+
+        // TODO: Set up cursor marker for peer edits
+        // const position = editor.getPosition() ?? { lineNumber: 0, column: 0 };
+        // const className = "bg-indigo-400 text-sm text-white px-1 absolute";
+        // const cursorWidget = new CursorWidget(username, position, className);
+        // editor.addContentWidget(cursorWidget);
+        // editor.onDidChangeCursorPosition((e) => {
+        //     cursorWidget.getPosition = () => ({
+        //         position: e.position,
+        //         preference: cursorWidget.preference
+        //     });
+        //     editor.layoutContentWidget(cursorWidget)
+        //     cursorWidget.show(1000);
+        // });
 
         // Destroy old binding if it exists
         bindingRef.current?.destroy();
@@ -74,7 +89,7 @@ export default function Editor() {
             bindingRef.current?.destroy();
             bindingRef.current = null;
         };
-    }, [runtime]);
+    }, [runtime, username]);
 
     // Load the runtime
     useEffect(() => {
@@ -136,7 +151,7 @@ export default function Editor() {
             </div>
             <div className="h-full" key={runtime?.id}>
                 <ResizablePanelGroup className="panels h-full" orientation="vertical">
-                    <ResizablePanel className="bg-white" defaultSize={65}>
+                    <ResizablePanel defaultSize={65}>
                         <MonacoEditor
                             language={runtime?.languageId}
                             onMount={handleEditorMount}
@@ -153,7 +168,7 @@ export default function Editor() {
                     <ResizableHandle withHandle
                         className="flex justify-center items-center w-full h-[15px] bg-transparent hover:bg-indigo-100 dark:hover:bg-indigo-900"
                         customHandle={<GripHorizontal className="size-2.5" />} />
-                    <ResizablePanel id="output-panel" className="border rounded p-2 pb-2 bg-gray-50 dark:bg-neutral-800 text-gray-500 dark:text-gray-400 overflow-y-scroll" defaultSize={35}>
+                    <ResizablePanel id="output-panel" className="border p-2 pb-2 bg-gray-50 dark:bg-neutral-800 text-gray-500 dark:text-gray-400 overflow-y-scroll" defaultSize={35}>
                         <div className="text-xs text-left">
                             {
                                 output ?

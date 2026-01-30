@@ -379,10 +379,16 @@ const servers: RTCConfiguration = {
     ]
 };
 
-const initLocalStream = async (): Promise<void> => {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    const localVideo = document.getElementById('curr-user') as HTMLVideoElement;
-    if (localVideo) localVideo.srcObject = localStream;
+const attachLocalStreamToVideoElement = async (id: string): Promise<void> => {
+    if (!localStream) localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    const localVideo = document.getElementById(id) as HTMLVideoElement
+    if (localVideo) localVideo.srcObject = localStream
+};
+
+const attachRemoteStreamToVideoElement = async (id: string): Promise<void> => {
+    if (!remoteStream) remoteStream = new MediaStream()
+    const remoteVideo = document.getElementById(id) as HTMLVideoElement
+    if (remoteVideo) remoteVideo.srcObject = remoteStream
 };
 
 
@@ -409,7 +415,7 @@ const createOfferForRoom = async (
 
     peerConnection.ontrack = (event: RTCTrackEvent) => {
         if (!remoteStream) remoteStream = new MediaStream();
-        const remoteVideo = document.getElementById('peer-user') as HTMLVideoElement;
+        const remoteVideo = document.getElementById('remote-video') as HTMLVideoElement;
         remoteVideo.srcObject = remoteStream;
 
         event.streams[0].getTracks().forEach(track => {
@@ -461,10 +467,7 @@ const createAnswerForRoom = async (
         peerConnection?.addTrack(track, localStream!);
     });
 
-    if (!remoteStream) remoteStream = new MediaStream();
-    const remoteVideo = document.getElementById('peer-user') as HTMLVideoElement;
-    remoteVideo.srcObject = remoteStream;
-
+    attachRemoteStreamToVideoElement('remote-video');
 
     peerConnection.ontrack = (event: RTCTrackEvent) => {
         event.streams[0].getTracks().forEach(track => {
@@ -509,7 +512,8 @@ const addRemoteIceCandidate = async (candidate: RTCIceCandidateInit): Promise<vo
 };
 
 export {
-    initLocalStream,
+    attachLocalStreamToVideoElement,
+    attachRemoteStreamToVideoElement,
     createOfferForRoom,
     createAnswerForRoom,
     isRemoteDescriptionSet,
