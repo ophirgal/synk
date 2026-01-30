@@ -280,10 +280,10 @@ Follow-up: Can you come up with an algorithm that is less than O(n2) time comple
                 </ResizablePanel>
                 {/* Video Panel */}
                 <ResizableHandle withHandle />
-                <ResizablePanel collapsible className="relative h-full p-4 flex flex-col justify-center items-center gap-2" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
-                    <div className="flex-1 flex flex-col justify-center items-center gap-4 h-100">
-                        <video id="local-video" className="rounded object-cover max-h-[45%] w-full" autoPlay playsInline muted></video>
-                        <video id="remote-video" className={`rounded object-cover max-h-[45%] w-full ${isPeerJoined ? '' : 'hidden'}`} autoPlay playsInline></video>
+                <ResizablePanel collapsible className="relative h-full flex flex-col justify-center items-center" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
+                    <div className="flex flex-col justify-center items-center gap-4 p-4 max-h-100">
+                        <video id="local-video" className="rounded object-cover max-h-full w-full" autoPlay playsInline muted></video>
+                        <video id="remote-video" className={`rounded object-cover max-h-full w-full ${isPeerJoined ? '' : 'hidden'}`} autoPlay playsInline></video>
                     </div>
                 </ResizablePanel>
             </ResizablePanelGroup >
