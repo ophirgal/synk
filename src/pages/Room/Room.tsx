@@ -3,9 +3,12 @@ import { useParams, useNavigate } from "react-router"
 import { toast } from "sonner"
 import { Copy, Plus, Menu, Moon, Sun } from "lucide-react"
 
-import { navLinks } from "@/constants/constants"
 import {
-    attachLocalStreamToVideoElement,
+    navLinks,
+    localVideoElementId,
+    remoteVideoElementId,
+} from "@/constants/constants"
+import {
     attachRemoteStreamToVideoElement,
     createOfferForRoom,
     createAnswerForRoom,
@@ -13,6 +16,9 @@ import {
     addRemoteIceCandidate,
     isRemoteDescriptionSet,
     getPeerConnection,
+    toggleLocalCamera,
+    toggleLocalMic,
+    attachLocalStreamToVideoElement,
 } from "@/lib/webrtc"
 import {
     ResizableHandle,
@@ -25,12 +31,15 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet"
 import CodeEditor from "@/components/CodeEditor/CodeEditor"
+import Video from "@/components/Video/Video"
 import { Button } from "@/components/ui/button"
 import { databaseService } from "@/services/FirebaseDatabaseService"
 import type { Room } from "@/services/DatabaseService"
 import { useRoom } from "@/context/RoomContext"
 import { CollaborationProvider, useCollaboration } from "@/context/CollaborationContext"
 import { useTheme } from "@/context/ThemeContext"
+
+import avatarPlaceholder from "@/assets/avatar-placeholder.svg"
 
 
 function RoomContent() {
@@ -79,7 +88,7 @@ function RoomContent() {
 
                 // Fetch and add any ICE candidates from the peer
                 if (room.answerIceCandidates) {
-                    toast(`[DEBUG]: Received ICE candidate ${room.answerIceCandidates.length - 1} from joiner peer`);
+                    // toast(`[DEBUG]: Received ICE candidate ${room.answerIceCandidates.length - 1} from joiner peer`);
                     const lastCandidate = room.answerIceCandidates[room.answerIceCandidates.length - 1];
                     await addRemoteIceCandidate(lastCandidate);
                 }
@@ -167,11 +176,15 @@ function RoomContent() {
     const handleCopyRoomLink = () => copyRoomLink()
     const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode)
     const handleNewRoom = () => window.open('/rooms', '_blank')
+    const handleTurnCameraOn = () => toggleLocalCamera(true)
+    const handleTurnCameraOff = () => toggleLocalCamera(false)
+    const handleTurnMicOn = () => toggleLocalMic(true)
+    const handleTurnMicOff = () => toggleLocalMic(false)
 
     // Initialize the Room
     useEffect(() => {
         (async () => {
-            await attachLocalStreamToVideoElement('local-video')
+            await attachLocalStreamToVideoElement(false, false) // cam & mic turned off until user action
             if (pathParams.id) {
                 setCurrentRoomId(pathParams.id)
                 await joinRoom(pathParams.id)
@@ -185,7 +198,7 @@ function RoomContent() {
     // Update remote video when peer joins
     useEffect(() => {
         if (isPeerJoined) {
-            attachRemoteStreamToVideoElement('remote-video')
+            attachRemoteStreamToVideoElement()
         }
     }, [isPeerJoined])
 
@@ -238,52 +251,29 @@ function RoomContent() {
             </nav >
             <ResizablePanelGroup className="h-full" orientation="horizontal">
                 {/* Text Editor Panel */}
-                <ResizablePanel collapsible className="relative h-full p-4" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
+                <ResizablePanel collapsible className="h-full p-4" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
                     <p className="dark:bg-indigo-950 bg-indigo-100 rounded p-4 overflow-y-scroll h-full text-left" style={{ whiteSpace: "pre-line" }}>
-                        <span className="text-center"><strong>Two Sum</strong></span>
+                        <span className="text-center"><strong>Text Editor</strong></span>
                         <br />
-                        {
-                            `Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.
-You may assume that each input would have exactly one solution, and you may not use the same element twice.
-You can return the answer in any order.
- 
-Example 1:
-Input: nums = [2,7,11,15], target = 9
-Output: [0,1]
-Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
-
-Example 2:
-Input: nums = [3,2,4], target = 6
-Output: [1,2]
-
-Example 3:
-Input: nums = [3,3], target = 6
-Output: [0,1]
-
- 
-Constraints:
-
-2 <= nums.length <= 104
--109 <= nums[i] <= 109
--109 <= target <= 109
-Only one valid answer exists.
-
- 
-Follow-up: Can you come up with an algorithm that is less than O(n2) time complexity?`
-                        }
+                        Coming Soon.
                     </p>
                 </ResizablePanel>
                 <ResizableHandle withHandle />
                 {/* Code Editor Panel */}
-                <ResizablePanel className="relative editor-panel h-full p-4" defaultSize={50}>
+                <ResizablePanel className="editor-panel h-full p-4" defaultSize={50}>
                     <CodeEditor />
                 </ResizablePanel>
                 {/* Video Panel */}
                 <ResizableHandle withHandle />
-                <ResizablePanel collapsible className="relative h-full flex flex-col justify-center items-center" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
-                    <div className="flex flex-col justify-center items-center gap-4 p-4 max-h-100">
-                        <video id="local-video" className="rounded object-cover max-h-full w-full" autoPlay playsInline muted></video>
-                        <video id="remote-video" className={`rounded object-cover max-h-full w-full ${isPeerJoined ? '' : 'hidden'}`} autoPlay playsInline></video>
+                <ResizablePanel collapsible className="h-full flex flex-col justify-center items-center" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
+                    <div className="flex flex-col justify-center items-center gap-4 p-4 max-h-100 ">
+                        <Video id={localVideoElementId} poster={avatarPlaceholder} autoPlay playsInline muted withControls
+                            onTurnCameraOn={handleTurnCameraOn}
+                            onTurnCameraOff={handleTurnCameraOff}
+                            onTurnMicOn={handleTurnMicOn}
+                            onTurnMicOff={handleTurnMicOff}
+                        />
+                        <Video id={remoteVideoElementId} poster={avatarPlaceholder} autoPlay playsInline hidden={!isPeerJoined} />
                     </div>
                 </ResizablePanel>
             </ResizablePanelGroup >

@@ -1,3 +1,5 @@
+import { localVideoElementId, remoteVideoElementId } from "@/constants/constants";
+
 let peerConnection: RTCPeerConnection | null = null;
 let localStream: MediaStream | null = null;
 let remoteStream: MediaStream | null = null;
@@ -379,18 +381,45 @@ const servers: RTCConfiguration = {
     ]
 };
 
-const attachLocalStreamToVideoElement = async (id: string): Promise<void> => {
-    if (!localStream) localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-    const localVideo = document.getElementById(id) as HTMLVideoElement
+const attachLocalStreamToVideoElement = async (cameraOn: boolean = false, microphoneOn: boolean = false): Promise<void> => {
+    if (!localStream) {
+        // need at least one enabled media type for initialization
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        // turning media types on/off as specified
+        localStream.getAudioTracks().forEach(track => track.enabled = microphoneOn)
+        localStream.getVideoTracks().forEach(track => track.enabled = cameraOn)
+    }
+    const localVideo = document.getElementById(localVideoElementId) as HTMLVideoElement
     if (localVideo) localVideo.srcObject = localStream
 };
 
-const attachRemoteStreamToVideoElement = async (id: string): Promise<void> => {
-    if (!remoteStream) remoteStream = new MediaStream()
-    const remoteVideo = document.getElementById(id) as HTMLVideoElement
+const attachRemoteStreamToVideoElement = async (): Promise<void> => {
+    if (!remoteStream) {
+        remoteStream = new MediaStream()
+    }
+    const remoteVideo = document.getElementById(remoteVideoElementId) as HTMLVideoElement
     if (remoteVideo) remoteVideo.srcObject = remoteStream
 };
 
+const toggleLocalCamera = async (cameraOn: boolean = true): Promise<void> => {
+    if (cameraOn && !localStream) {
+        await attachLocalStreamToVideoElement(true);
+        return;
+    }
+    localStream?.getVideoTracks().forEach(track => {
+        track.enabled = cameraOn;
+    });
+};
+
+const toggleLocalMic = async (microphoneOn: boolean = true): Promise<void> => {
+    if (microphoneOn && !localStream) {
+        await attachLocalStreamToVideoElement(false, true);
+        return;
+    }
+    localStream?.getAudioTracks().forEach(track => {
+        track.enabled = microphoneOn;
+    });
+};
 
 const createOfferForRoom = async (
     onIceCandidate: (candidate: RTCIceCandidateInit) => void,
@@ -415,11 +444,13 @@ const createOfferForRoom = async (
 
     peerConnection.ontrack = (event: RTCTrackEvent) => {
         if (!remoteStream) remoteStream = new MediaStream();
-        const remoteVideo = document.getElementById('remote-video') as HTMLVideoElement;
+        const remoteVideo = document.getElementById(remoteVideoElementId) as HTMLVideoElement;
         remoteVideo.srcObject = remoteStream;
 
-        event.streams[0].getTracks().forEach(track => {
-            remoteStream?.addTrack(track);
+        event.streams.forEach(stream => {
+            stream.getTracks().forEach(track => {
+                remoteStream?.addTrack(track);
+            });
         });
     };
 
@@ -467,7 +498,7 @@ const createAnswerForRoom = async (
         peerConnection?.addTrack(track, localStream!);
     });
 
-    attachRemoteStreamToVideoElement('remote-video');
+    attachRemoteStreamToVideoElement();
 
     peerConnection.ontrack = (event: RTCTrackEvent) => {
         event.streams[0].getTracks().forEach(track => {
@@ -514,6 +545,8 @@ const addRemoteIceCandidate = async (candidate: RTCIceCandidateInit): Promise<vo
 export {
     attachLocalStreamToVideoElement,
     attachRemoteStreamToVideoElement,
+    toggleLocalCamera,
+    toggleLocalMic,
     createOfferForRoom,
     createAnswerForRoom,
     isRemoteDescriptionSet,
