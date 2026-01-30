@@ -192,7 +192,7 @@ function RoomContent() {
     return (
         <div className="h-full flex flex-col border-t">
             <nav className="flex border-b h-[50px] justify-between items-center px-4">
-                <a href="/" className="text-3xl font-bold no-underline text-indigo-500 hover:text-indigo-400 dark:text-indigo-400 dark:hover:text-indigo-300 active:text-indigo-600 transition-colors">[synk]</a>
+                <a href="/" className="text-3xl font-bold no-underline text-indigo-500 hover:text-indigo-400 dark:text-indigo-400 dark:hover:text-indigo-300 active:text-indigo-600 transition-colors select-none">[synk]</a>
                 <div className="flex items-center gap-2 max-w-[50%]">
                     {roomLink &&
                         <div id="room-link" className="text-sm flex items-center gap-2 w-full">

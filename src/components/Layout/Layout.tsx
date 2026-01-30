@@ -12,7 +12,7 @@ export default function Layout() {
         <div className="flex flex-col h-screen w-screen bg-gradient-to-br dafrom-blue-50 to-indigo-100 dark:from-black dark:to-indigo-800">
             {shouldShowHeader &&
                 <header className="flex items-center justify-between px-8 h-[75px]">
-                    <a href="/" className="text-5xl font-bold no-underline text-indigo-500 hover:text-indigo-400 dark:text-indigo-400 dark:hover:text-indigo-300 active:text-indigo-600 transition-colors">[synk]</a>
+                    <a href="/" className="text-5xl font-bold no-underline text-indigo-500 hover:text-indigo-400 dark:text-indigo-400 dark:hover:text-indigo-300 active:text-indigo-600 transition-colors select-none">[synk]</a>
 
                     <nav className="flex justify-end gap-6">
                         {navLinks.map((link) => (
