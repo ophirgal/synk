@@ -18,13 +18,13 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner";
-// import CursorWidget from "./CursorWidget"; // TODO: use this for remote cursor marker
+// import CursorWidget from "../CursorWidget"; // TODO: use this for remote cursor marker
 import { runtimeRegistry, type RuntimeEngine } from "@/lib/runtimes";
 import { useCollaboration } from "@/context/CollaborationContext";
 import { useTheme } from "@/context/ThemeContext";
 
 
-export default function Editor() {
+export default function CodeEditor() {
     const [output, setOutput] = useState<string>("");
     const [isReadyToRun, setIsReadyToRun] = useState(false);
     const [username, _] = useState<string>("user1"); // TODO: use this for local username

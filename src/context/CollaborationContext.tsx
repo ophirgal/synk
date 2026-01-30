@@ -7,7 +7,9 @@ import {
     useRef,
     type ReactNode
 } from 'react';
+import { useParams } from 'react-router';
 import * as Y from 'yjs';
+
 import { WebRTCProvider } from '@/lib/collaboration';
 import { runtimeRegistry } from '@/lib/runtimes';
 
@@ -29,6 +31,7 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     const [isConnected, setIsConnected] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
     const [currentLanguage, setCurrentLanguage] = useState('python');
+    const pathParams = useParams(); // check if id path variable exists (joining an existing room)
 
     // Initialize runtime engines and the WebRTC provider
     useEffect(() => {
@@ -49,11 +52,14 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         };
     }, []);
 
-    // Display default code for current language if editor is empty
+    // Display default code for current language
+    // (if have not joined an existing room AND editor is empty)
     useEffect(() => {
-        const runtime = runtimeRegistry[currentLanguage];
+        const isJoinedExisitingRoom = !!pathParams.id
         const yText = yDocRef.current.getText(`${currentLanguage}`);
-        if (runtime && yText.toString().length === 0) {
+        const isEditorEmpty = yText.toString().length === 0;
+        if (!isJoinedExisitingRoom && isEditorEmpty) {
+            const runtime = runtimeRegistry[currentLanguage];
             yText.insert(0, runtime.defaultCode);
         }
     }, [currentLanguage]);

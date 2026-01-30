@@ -24,7 +24,7 @@ import {
     SheetContent,
     SheetTrigger,
 } from "@/components/ui/sheet"
-import Editor from "@/components/Editor/Editor"
+import CodeEditor from "@/components/CodeEditor/CodeEditor"
 import { Button } from "@/components/ui/button"
 import { databaseService } from "@/services/FirebaseDatabaseService"
 import type { Room } from "@/services/DatabaseService"
@@ -276,7 +276,7 @@ Follow-up: Can you come up with an algorithm that is less than O(n2) time comple
                 <ResizableHandle withHandle />
                 {/* Code Editor Panel */}
                 <ResizablePanel className="relative editor-panel h-full p-4" defaultSize={50}>
-                    <Editor />
+                    <CodeEditor />
                 </ResizablePanel>
                 {/* Video Panel */}
                 <ResizableHandle withHandle />
