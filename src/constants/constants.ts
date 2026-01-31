@@ -9,10 +9,12 @@ const localVideoElementId = "local-video"
 const remoteVideoElementId = "remote-video"
 
 const textEditorTextId = "text-editor"
+const textEditorDefaultText = "Free text goes here... [synk] away!"
 
 export {
     navLinks,
     localVideoElementId,
     remoteVideoElementId,
-    textEditorTextId
+    textEditorTextId,
+    textEditorDefaultText,
 }

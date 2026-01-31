@@ -13,6 +13,7 @@ import * as Y from 'yjs';
 import { WebRTCDataProvider, type Profile } from '@/lib/webrtc';
 import { runtimeRegistry } from '@/lib/runtimes';
 import { generateUsername } from '@/lib/utils';
+import { textEditorDefaultText, textEditorTextId } from '@/constants/constants';
 
 interface CollaborationContextType {
     yDoc: Y.Doc;
@@ -57,7 +58,19 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    // Initialize runtime engines and the WebRTC provider (meant to run only once.)
+    /* Display default text for text editor
+     * (if have not joined an existing room AND editor is empty)
+     */
+    const initDefaultEditorContent = useCallback((yTextId: string, defaultContent: string) => {
+        const isJoinedExisitingRoom = !!pathParams.id
+        const yText = yDocRef.current.getText(yTextId);
+        const isEditorEmpty = yText.toString().length === 0;
+        if (!isJoinedExisitingRoom && isEditorEmpty) {
+            yText.insert(0, defaultContent);
+        }
+    }, [pathParams]);
+
+    // Initialize [used to be: init runtime engines] and the WebRTC provider (meant to run only once.)
     useEffect(() => {
         const initialProfile = localProfile; // using the initial state value (do not add dependencies)
         providerRef.current = new WebRTCDataProvider(yDocRef.current, initialProfile, handleRemoteProfileUpdate);
@@ -70,6 +83,10 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
             setIsConnected(false);
             setIsSynced(false);
         };
+
+        // Display default text for text editor
+        // (if have not joined an existing room AND editor is empty)
+        initDefaultEditorContent(textEditorTextId, textEditorDefaultText);
 
         return () => {
             providerRef.current?.destroy();
@@ -88,13 +105,8 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     // Display default code for current language
     // (if have not joined an existing room AND editor is empty)
     useEffect(() => {
-        const isJoinedExisitingRoom = !!pathParams.id
-        const yText = yDocRef.current.getText(currentLanguage);
-        const isEditorEmpty = yText.toString().length === 0;
-        if (!isJoinedExisitingRoom && isEditorEmpty) {
-            const runtime = runtimeRegistry[currentLanguage];
-            yText.insert(0, runtime.defaultCode);
-        }
+        const runtime = runtimeRegistry[currentLanguage];
+        initDefaultEditorContent(currentLanguage, runtime.defaultCode);
     }, [currentLanguage]);
 
     return (

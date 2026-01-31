@@ -40,9 +40,6 @@ export default function TextEditor() {
         //     updateLocalProfile({ editors: { ...localProfile.editors, [textEditorTextId]: e.position } });
         // });
 
-        // Initialize yText with default text
-        yDoc.getText(textEditorTextId).insert(0, "Free text goes here... [synk] away!");
-
         // Destroy old binding if it exists
         bindingRef.current?.destroy();
 
