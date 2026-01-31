@@ -8,8 +8,11 @@ const navLinks = [
 const localVideoElementId = "local-video"
 const remoteVideoElementId = "remote-video"
 
+const textEditorTextId = "text-editor"
+
 export {
     navLinks,
     localVideoElementId,
     remoteVideoElementId,
+    textEditorTextId
 }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import MonacoEditor from "@monaco-editor/react";
 import { editor as monaco } from "monaco-editor";
 import { MonacoBinding } from "y-monaco";
-import { GripHorizontal, Play } from "lucide-react";
+import { AArrowDown, AArrowUp, GripHorizontal, Play } from "lucide-react";
 
 import {
     ResizablePanel,
@@ -27,6 +27,7 @@ import { useTheme } from "@/context/ThemeContext";
 export default function CodeEditor() {
     const [output, setOutput] = useState<string>("");
     const [isReadyToRun, setIsReadyToRun] = useState(false);
+    const [fontSize, setFontSize] = useState(14);
     const editorRef = useRef<monaco.IStandaloneCodeEditor | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
     // const cursorWidgetRef = useRef<CursorWidget | null>(null);
@@ -35,6 +36,14 @@ export default function CodeEditor() {
     const { isDarkMode } = useTheme();
 
     const runtime = useMemo<RuntimeEngine>(() => runtimeRegistry[currentLanguage], [currentLanguage]);
+
+    const handleIncreaseFontSize = () => {
+        setFontSize((prevFontSize) => prevFontSize + 1);
+    };
+
+    const handleDecreaseFontSize = () => {
+        setFontSize((prevFontSize) => Math.max(prevFontSize - 1, 1));
+    };
 
     const handleRun = useCallback(async () => {
         if (!runtime.isReady()) {
@@ -153,29 +162,37 @@ export default function CodeEditor() {
                         ))}
                     </SelectContent>
                 </Select>
-                <Button disabled={!isReadyToRun} onClick={handleRun} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
-                    {isReadyToRun ?
-                        <>
-                            <Play className="h-4 w-4" />
-                            <span className="hidden sm:inline">Run</span>
-                        </>
-                        :
-                        <><Spinner data-icon="inline-start" />
-                            Loading...
-                        </>
-                    }
-                </Button>
+                <div className="flex gap-2">
+                    <Button disabled={!isReadyToRun} onClick={handleIncreaseFontSize} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                        <AArrowUp className="h-4 w-42" />
+                    </Button>
+                    <Button disabled={!isReadyToRun} onClick={handleDecreaseFontSize} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                        <AArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button disabled={!isReadyToRun} onClick={handleRun} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                        {isReadyToRun ?
+                            <>
+                                <Play className="h-4 w-4" />
+                                <span className="hidden sm:inline">Run</span>
+                            </>
+                            :
+                            <><Spinner data-icon="inline-start" />
+                                Loading...
+                            </>
+                        }
+                    </Button>
+                </div>
             </div>
             <div className="h-full" key={runtime?.id}>
                 <ResizablePanelGroup className="panels h-full" orientation="vertical">
-                    <ResizablePanel defaultSize={65}>
+                    <ResizablePanel className="border" defaultSize={65}>
                         <MonacoEditor
                             language={runtime.languageId}
                             onMount={handleEditorMount}
                             theme={isDarkMode ? "vs-dark" : "light"}
                             options={{
                                 minimap: { enabled: false },
-                                fontSize: 14,
+                                fontSize: fontSize,
                                 scrollBeyondLastLine: false,
                                 automaticLayout: true,
                             }}
@@ -186,14 +203,21 @@ export default function CodeEditor() {
                         className="flex justify-center items-center w-full h-[15px] bg-transparent hover:bg-indigo-100 dark:hover:bg-indigo-900"
                         customHandle={<GripHorizontal className="size-2.5" />} />
                     <ResizablePanel id="output-panel" className="border p-2 pb-2 bg-gray-50 dark:bg-neutral-800 text-gray-500 dark:text-gray-400 overflow-y-scroll" defaultSize={35}>
-                        <div className="text-xs text-left">
-                            {
-                                output ?
-                                    <pre>{output}</pre>
-                                    :
-                                    <pre className="italic text-center">Press <strong>Run</strong> to see the output...</pre>
-                            }
-                        </div>
+                        {isReadyToRun ?
+                            <div className="text-xs text-left">
+                                {
+                                    output ?
+                                        <pre>{output}</pre>
+                                        :
+                                        <pre className="italic text-center">Press <strong>Run</strong> to see the output...</pre>
+                                }
+                            </div>
+                            :
+                            <div className="flex justify-center items-center h-full gap-1">
+                                <Spinner data-icon="inline-start" />
+                                Loading...
+                            </div>
+                        }
                     </ResizablePanel>
                 </ResizablePanelGroup>
             </div>

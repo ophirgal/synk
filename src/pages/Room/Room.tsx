@@ -29,6 +29,9 @@ import {
 import {
     Sheet,
     SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
     SheetTrigger,
 } from "@/components/ui/sheet"
 import CodeEditor from "@/components/CodeEditor/CodeEditor"
@@ -41,6 +44,8 @@ import { CollaborationProvider, useCollaboration } from "@/context/Collaboration
 import { useTheme } from "@/context/ThemeContext"
 
 import avatarPlaceholder from "@/assets/avatar-placeholder.svg"
+import TextEditor from "@/components/TextEditor/TextEditor"
+import { Spinner } from "@/components/ui/spinner"
 
 
 function RoomContent() {
@@ -217,7 +222,7 @@ function RoomContent() {
             <nav className="flex border-b h-[50px] justify-between items-center px-4">
                 <a href="/" className="text-3xl font-bold no-underline text-indigo-500 hover:text-indigo-400 dark:text-indigo-400 dark:hover:text-indigo-300 active:text-indigo-600 transition-colors select-none">[synk]</a>
                 <div className="flex items-center gap-2 max-w-[50%]">
-                    {roomLink &&
+                    {roomLink ?
                         <div id="room-link" className="text-sm flex items-center gap-2 w-full">
                             <p className="text-muted-foreground dark:text-gray-100 whitespace-nowrap"><strong>Room:</strong></p>
                             <a
@@ -229,6 +234,11 @@ function RoomContent() {
                             <div>
                                 <Copy className="cursor-pointer hover:text-gray-500 active:text-black h-4 w-4" onClick={handleCopyRoomLink} />
                             </div>
+                        </div>
+                        :
+                        <div className="text-sm flex items-center gap-2 text-muted-foreground dark:text-gray-100 whitespace-nowrap">
+                            <Spinner data-icon="inline-start" />
+                            <strong>Creating Room...</strong>
                         </div>
                     }
                 </div>
@@ -244,6 +254,10 @@ function RoomContent() {
                             <Menu className="cursor-pointer rounded text-indigo-500 hover:text-indigo-400 h-8 w-8 ml-2" />
                         </SheetTrigger>
                         <SheetContent side="right" className="w-[250px]">
+                            <SheetHeader>
+                                <SheetTitle></SheetTitle>
+                                <SheetDescription></SheetDescription>
+                            </SheetHeader>
                             <nav className="flex flex-col gap-4 mt-6">
                                 {navLinks.map((link) => (
                                     <a
@@ -262,15 +276,13 @@ function RoomContent() {
             <ResizablePanelGroup className="h-full" orientation="horizontal">
                 {/* Text Editor Panel */}
                 <ResizablePanel collapsible className="h-full p-4" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
-                    <p className="dark:bg-indigo-950 bg-indigo-100 rounded p-4 overflow-y-scroll h-full text-left" style={{ whiteSpace: "pre-line" }}>
-                        <span className="text-center"><strong>Text Editor</strong></span>
-                        <br />
-                        Coming Soon.
-                    </p>
+                    {/* <div className="dark:bg-indigo-950 bg-indigo-100 p-4 h-full text-left" style={{ whiteSpace: "pre-line" }}> */}
+                        <TextEditor />
+                    {/* </div> */}
                 </ResizablePanel>
                 <ResizableHandle withHandle />
                 {/* Code Editor Panel */}
-                <ResizablePanel className="editor-panel h-full p-4" defaultSize={50}>
+                <ResizablePanel className="h-full p-4" defaultSize={50}>
                     <CodeEditor />
                 </ResizablePanel>
                 {/* Video Panel */}
