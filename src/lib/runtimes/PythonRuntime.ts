@@ -11,7 +11,7 @@ interface PyodideInterface {
     toPy: (obj: any) => any;
 }
 
-const PYODIDE_VERSION = "0.25.1";
+const PYODIDE_VERSION = "0.29.3";
 const PYODIDE_CDN_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 
 export class PythonRuntime implements RuntimeEngine {
