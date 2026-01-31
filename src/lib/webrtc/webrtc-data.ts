@@ -7,12 +7,14 @@ type SyncMessage =
     | { type: 'profile-update'; data: string };
 
 export type Profile = {
-    cameraOn: boolean;
-    microphoneOn: boolean;
+    username: string;
+    isCameraOn: boolean;
+    isMicrophoneOn: boolean;
 };
 
-export class WebRTCProvider {
+export class WebRTCDataProvider {
     private doc: Y.Doc;
+    private initialLocalProfile: Profile;
     private onRemoteProfileUpdate: (profile: Profile) => void;
     private dataChannel: RTCDataChannel | null = null;
     private isConnected = false;
@@ -20,9 +22,10 @@ export class WebRTCProvider {
     onSynced?: () => void;
     onDisconnect?: () => void;
 
-    constructor(doc: Y.Doc, onRemoteProfileUpdate: (profile: Profile) => void) {
+    constructor(doc: Y.Doc, initialLocalProfile: Profile, onRemoteProfileUpdate: (profile: Profile) => void) {
         this.doc = doc;
-        this.doc.on('update', this.handleLocalUpdate);
+        this.doc.on('update', this.handleLocalDocUpdate);
+        this.initialLocalProfile = initialLocalProfile;
         this.onRemoteProfileUpdate = onRemoteProfileUpdate;
     }
 
@@ -36,10 +39,11 @@ export class WebRTCProvider {
         if (this.dataChannel.readyState === 'open') {
             this.isConnected = true;
             this.sendSyncStep1();
+            this.sendProfileUpdate(this.initialLocalProfile);
         }
     }
 
-    private handleLocalUpdate = (update: Uint8Array, origin: unknown): void => {
+    private handleLocalDocUpdate = (update: Uint8Array, origin: unknown): void => {
         if (origin === 'remote' || !this.isConnected || !this.dataChannel) {
             return;
         }
@@ -53,7 +57,7 @@ export class WebRTCProvider {
     private handleRemoteMessage = (event: MessageEvent): void => {
         try {
             const message = JSON.parse(event.data) as SyncMessage;
-
+            // alert("received message: " + JSON.stringify(message))
             switch (message.type) {
                 case 'sync-step-1':
                     this.handleSyncStep1(message);
@@ -69,7 +73,7 @@ export class WebRTCProvider {
                     break;
             }
         } catch (err) {
-            console.error('[WebRTCProvider] Error parsing message:', err);
+            console.error('[WebRTCDataProvider] Error parsing message:', err);
         }
     };
 
@@ -139,11 +143,11 @@ export class WebRTCProvider {
     };
 
     private handleChannelError = (error: Event): void => {
-        console.error('[WebRTCProvider] Data channel error:', error);
+        console.error('[WebRTCDataProvider] Data channel error:', error);
     };
 
     destroy(): void {
-        this.doc.off('update', this.handleLocalUpdate);
+        this.doc.off('update', this.handleLocalDocUpdate);
         this.dataChannel = null;
         this.isConnected = false;
     }

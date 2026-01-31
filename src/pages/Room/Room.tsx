@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router"
 import { toast } from "sonner"
 import { Copy, Plus, Menu, Moon, Sun } from "lucide-react"
@@ -16,10 +16,10 @@ import {
     setRemoteAnswer,
     addRemoteIceCandidate,
     isRemoteDescriptionSet,
-    getPeerConnection,
+    // getPeerConnection,
     toggleLocalCamera,
     toggleLocalMic,
-    toggleRemoteCamera,
+    toggleRemoteVideoSource,
 } from "@/lib/webrtc"
 import {
     ResizableHandle,
@@ -31,12 +31,12 @@ import {
     SheetContent,
     SheetTrigger,
 } from "@/components/ui/sheet"
-import CodeEditor from "@/components/CodeEditor/CodeEditor"
+// import CodeEditor from "@/components/CodeEditor/CodeEditor"
 import Video from "@/components/Video/Video"
 import { Button } from "@/components/ui/button"
 import { databaseService } from "@/services/FirebaseDatabaseService"
 import type { Room } from "@/services/DatabaseService"
-import { useRoom } from "@/context/RoomContext"
+import { RoomProvider, useRoom } from "@/context/RoomContext"
 import { CollaborationProvider, useCollaboration } from "@/context/CollaborationContext"
 import { useTheme } from "@/context/ThemeContext"
 
@@ -46,10 +46,11 @@ import avatarPlaceholder from "@/assets/avatar-placeholder.svg"
 function RoomContent() {
     const [isPeerJoined, setIsPeerJoined] = useState(false);
     const isJoinAttemptedRef = useRef<boolean>(false);
+
     const navigate = useNavigate();
     const pathParams = useParams(); // get id path variable from the router!
     const { roomLink, setCurrentRoomId, copyRoomLink } = useRoom();
-    const { connectDataChannel, remoteProfile, sendProfileUpdate } = useCollaboration();
+    const { connectDataChannel, localProfile, remoteProfile, updateLocalProfile } = useCollaboration();
     const { isDarkMode, setIsDarkMode } = useTheme();
 
 
@@ -81,8 +82,8 @@ function RoomContent() {
 
             // Listen for Room Updates (answer & ICE candidates from peer)
             const unsubscribe = databaseService.listenForRoomUpdates(room.id, async (room) => {
-                console.log('[DEBUG]: Creator received room updates:', room);
-                console.log("[DEBUG]: PeerConnection:", getPeerConnection());
+                // console.log('[DEBUG]: Creator received room updates:', room);
+                // console.log("[DEBUG]: PeerConnection:", getPeerConnection());
                 if (!isRemoteDescriptionSet() && room.answer) {
                     await setRemoteAnswer(room.answer);
                 }
@@ -112,7 +113,7 @@ function RoomContent() {
         }
 
         if (isJoinAttemptedRef.current) return; // Prevent duplicate join attempts
-        console.log("[DEBUG]: Attempting to join room:", roomId);
+        // console.log("[DEBUG]: Attempting to join room:", roomId);
         isJoinAttemptedRef.current = true;
 
         try {
@@ -158,8 +159,8 @@ function RoomContent() {
 
             // Listen for Room Updates (ICE candidates from room creator)
             const unsubscribe = databaseService.listenForRoomUpdates(room.id, async (room) => {
-                console.log('[DEBUG]: Joiner received room updates:', room);
-                console.log("[DEBUG]: PeerConnection:", getPeerConnection());
+                // console.log('[DEBUG]: Joiner received room updates:', room);
+                // console.log("[DEBUG]: PeerConnection:", getPeerConnection());
                 // add any ICE candidates from the peer
                 if (room.offerIceCandidates) {
                     const lastCandidate = room.offerIceCandidates[room.offerIceCandidates.length - 1];
@@ -175,36 +176,28 @@ function RoomContent() {
     }
 
     const handleCopyRoomLink = () => copyRoomLink()
-    const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode)
     const handleNewRoom = () => window.open('/rooms', '_blank')
-    const handleTurnCameraOn = () => {
-        toggleLocalCamera(true)
-        sendProfileUpdate({ cameraOn: true })
-    }
-    const handleTurnCameraOff = () => {
-        toggleLocalCamera(false)
-        sendProfileUpdate({ cameraOn: false })
-    }
-    const handleTurnMicOn = () => {
-        toggleLocalMic(true)
-        sendProfileUpdate({ microphoneOn: true })
-    }
-    const handleTurnMicOff = () => {
-        toggleLocalMic(false)
-        sendProfileUpdate({ microphoneOn: false })
-    }
+    const handleToggleDarkMode = useCallback(() => setIsDarkMode(!isDarkMode), [isDarkMode])
+    const handleCameraToggle = useCallback(async () => {
+        await toggleLocalCamera(!localProfile.isCameraOn)
+        updateLocalProfile({ isCameraOn: !localProfile.isCameraOn })
+    }, [localProfile])
+    const handleMicToggle = useCallback(() => {
+        toggleLocalMic(!localProfile.isMicrophoneOn)
+        updateLocalProfile({ isMicrophoneOn: !localProfile.isMicrophoneOn })
+    }, [localProfile])
 
     // Initialize the Room
     useEffect(() => {
         (async () => {
+            // IMPORTANT: must ensure local stream before creating/joining room!
             await ensureLocalStream(false, false) // cam & mic turned off until user action
             if (pathParams.id) {
                 setCurrentRoomId(pathParams.id)
                 await joinRoom(pathParams.id)
-                return
+            } else {
+                await createRoom()
             }
-
-            await createRoom()
         })()
     }, [])
 
@@ -215,8 +208,7 @@ function RoomContent() {
                 await ensureRemoteStream()
             }
             // Update remote video window with remote profile
-            await toggleRemoteCamera(remoteProfile.cameraOn)
-            await toggleRemoteCamera(remoteProfile.cameraOn)
+            await toggleRemoteVideoSource(remoteProfile.isCameraOn)
         })()
     }, [isPeerJoined, remoteProfile])
 
@@ -279,20 +271,20 @@ function RoomContent() {
                 <ResizableHandle withHandle />
                 {/* Code Editor Panel */}
                 <ResizablePanel className="editor-panel h-full p-4" defaultSize={50}>
-                    <CodeEditor />
+                    {/* <CodeEditor /> */}
                 </ResizablePanel>
                 {/* Video Panel */}
                 <ResizableHandle withHandle />
                 <ResizablePanel collapsible className="h-full flex flex-col justify-center items-center" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
                     <div className="flex flex-col justify-center items-center gap-4 p-4 max-h-100 ">
-                        <Video id={localVideoElementId} poster={avatarPlaceholder} autoPlay playsInline muted withControls
-                            onTurnCameraOn={handleTurnCameraOn}
-                            onTurnCameraOff={handleTurnCameraOff}
-                            onTurnMicOn={handleTurnMicOn}
-                            onTurnMicOff={handleTurnMicOff}
+                        <Video id={localVideoElementId} poster={avatarPlaceholder}
+                            autoPlay playsInline withControls muted
+                            profile={localProfile} isLocalProfile
+                            onCameraToggle={handleCameraToggle} onMicToggle={handleMicToggle}
                         />
-                        <Video id={remoteVideoElementId} poster={avatarPlaceholder} autoPlay playsInline
-                            hidden={!isPeerJoined} remoteProfile={remoteProfile}
+                        <Video id={remoteVideoElementId} poster={avatarPlaceholder}
+                            autoPlay playsInline withControls
+                            profile={remoteProfile} hidden={!isPeerJoined}
                         />
                     </div>
                 </ResizablePanel>
@@ -304,7 +296,9 @@ function RoomContent() {
 export default function RoomPage() {
     return (
         <CollaborationProvider>
-            <RoomContent />
+            <RoomProvider>
+                <RoomContent />
+            </RoomProvider>
         </CollaborationProvider>
     );
 }

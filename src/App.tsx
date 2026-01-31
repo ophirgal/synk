@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router"
 
-import { RoomProvider } from "./context/RoomContext"
 import Layout from "./components/Layout/Layout"
 import Home from "./pages/Home/Home"
 import Room from "./pages/Room/Room"
@@ -12,7 +11,6 @@ import { ThemeProvider } from "./context/ThemeContext"
 function App() {
   return (
     <ThemeProvider>
-      <RoomProvider>
         <Router>
           <Routes>
             <Route path="/" element={<Layout />}>
@@ -24,7 +22,6 @@ function App() {
             </Route>
           </Routes>
         </Router>
-      </RoomProvider>
     </ThemeProvider>
   )
 }

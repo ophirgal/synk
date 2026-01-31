@@ -5,11 +5,6 @@ let localStream: MediaStream | null = null;
 let remoteStream: MediaStream | null = null;
 let dataChannel: RTCDataChannel | null = null;
 
-export const getPeerConnection = () => peerConnection;
-export const getLocalStream = () => localStream;
-export const getRemoteStream = () => remoteStream;
-export const getDataChannel = () => dataChannel;
-
 const servers: RTCConfiguration = {
     iceServers: [
         {
@@ -391,7 +386,8 @@ const servers: RTCConfiguration = {
  * @returns {Promise<void>} - A promise that resolves when the local stream has been updated.
  */
 const ensureLocalStream = async (cameraOn: boolean = false, microphoneOn: boolean = false): Promise<void> => {
-    if (!localStream) {
+    // if (!localStream) {
+    if (true) {
         // need at least one enabled media type for initialization
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
         // turning media types on/off as specified
@@ -419,14 +415,15 @@ const ensureRemoteStream = async (cameraOn: boolean = false): Promise<void> => {
 
 const toggleLocalCamera = async (cameraOn: boolean = true): Promise<void> => {
     if (cameraOn && !localStream) {
+        // alert("ensuring localStream exists with camera on")
         await ensureLocalStream(true);
         return;
     }
-    // disable video track so as not to send anymore frames
+    // enable/disable video track (stops sending frames when disabled)
     localStream?.getVideoTracks().forEach(track => {
         track.enabled = cameraOn;
     });
-    // inflate or nullify video source so as to display poster when needed
+    // inflate or nullify video source (nullifying displays poster)
     const localVideo = document.getElementById(localVideoElementId) as HTMLVideoElement
     if (!localVideo) return;
     localVideo.srcObject = cameraOn ? localStream : null
@@ -442,7 +439,7 @@ const toggleLocalMic = async (microphoneOn: boolean = true): Promise<void> => {
     });
 };
 
-const toggleRemoteCamera = async (cameraOn: boolean = true): Promise<void> => {
+const toggleRemoteVideoSource = async (cameraOn: boolean = true): Promise<void> => {
     if (cameraOn && !remoteStream) {
         await ensureRemoteStream(true);
         return;
@@ -574,15 +571,18 @@ const addRemoteIceCandidate = async (candidate: RTCIceCandidateInit): Promise<vo
     }
 };
 
+const getPeerConnection = () => peerConnection;
+
 export {
     ensureLocalStream,
     ensureRemoteStream,
     toggleLocalCamera,
     toggleLocalMic,
-    toggleRemoteCamera,
+    toggleRemoteVideoSource,
     createOfferForRoom,
     createAnswerForRoom,
     isRemoteDescriptionSet,
     setRemoteAnswer,
-    addRemoteIceCandidate
+    addRemoteIceCandidate,
+    getPeerConnection,
 };

@@ -153,7 +153,7 @@ export default function CodeEditor() {
                 <ResizablePanelGroup className="panels h-full" orientation="vertical">
                     <ResizablePanel defaultSize={65}>
                         <MonacoEditor
-                            language={runtime?.languageId}
+                            language={runtime.languageId}
                             onMount={handleEditorMount}
                             theme={isDarkMode ? "vs-dark" : "light"}
                             options={{

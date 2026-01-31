@@ -10,13 +10,15 @@ import {
 import { useParams } from 'react-router';
 import * as Y from 'yjs';
 
-import { WebRTCProvider, type Profile } from '@/lib/collaboration';
+import { WebRTCDataProvider, type Profile } from '@/lib/webrtc';
 import { runtimeRegistry } from '@/lib/runtimes';
+import { generateUsername } from '@/lib/utils';
 
 interface CollaborationContextType {
     yDoc: Y.Doc;
+    localProfile: Profile;
     remoteProfile: Profile;
-    sendProfileUpdate: (update: Partial<Profile>) => void;
+    updateLocalProfile: (update: Partial<Profile>) => void;
     currentLanguage: string;
     setCurrentLanguage: (language: string) => void;
     isConnected: boolean;
@@ -28,35 +30,37 @@ const CollaborationContext = createContext<CollaborationContextType | null>(null
 
 export function CollaborationProvider({ children }: { children: ReactNode }) {
     const yDocRef = useRef<Y.Doc>(new Y.Doc());
-    const providerRef = useRef<WebRTCProvider | null>(null);
+    const providerRef = useRef<WebRTCDataProvider | null>(null);
 
     const [isConnected, setIsConnected] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
     const [currentLanguage, setCurrentLanguage] = useState('python');
-    const [localProfile, setLocalProfile] = useState<Profile>({ cameraOn: false, microphoneOn: false });
-    const [remoteProfile, setRemoteProfile] = useState<Profile>({ cameraOn: false, microphoneOn: false });
+    const [localProfile, setLocalProfile] = useState<Profile>({ username: generateUsername(), isCameraOn: false, isMicrophoneOn: false });
+    const [remoteProfile, setRemoteProfile] = useState<Profile>({ username: '', isCameraOn: false, isMicrophoneOn: false });
     const pathParams = useParams(); // check if id path variable exists (joining an existing room)
 
     const handleRemoteProfileUpdate = (profile: Profile) => {
+        // alert("received remote profile update: " + JSON.stringify(profile))
         setRemoteProfile(profile);
     }
 
-    const sendProfileUpdate = (update: Partial<Profile>) => {
+    const updateLocalProfile = useCallback((update: Partial<Profile>) => {
         const updatedProfile = { ...localProfile, ...update };
+        // alert("updating local profile: " + JSON.stringify(updatedProfile))
         setLocalProfile(updatedProfile);
-        providerRef.current?.sendProfileUpdate(updatedProfile);
-    }
+    }, [localProfile]);
 
-    const connectDataChannel = useCallback((channel: RTCDataChannel) => {
+    const connectDataChannel = (channel: RTCDataChannel) => {
         if (providerRef.current) {
             providerRef.current.connect(channel);
             setIsConnected(true);
         }
-    }, []);
+    };
 
-    // Initialize runtime engines and the WebRTC provider
+    // Initialize runtime engines and the WebRTC provider (meant to run only once.)
     useEffect(() => {
-        providerRef.current = new WebRTCProvider(yDocRef.current, handleRemoteProfileUpdate);
+        const initialProfile = localProfile; // using the initial state value (do not add dependencies)
+        providerRef.current = new WebRTCDataProvider(yDocRef.current, initialProfile, handleRemoteProfileUpdate);
 
         providerRef.current.onSynced = () => {
             setIsSynced(true);
@@ -73,11 +77,19 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         };
     }, []);
 
+    // Send local profile updates
+    useEffect(() => {
+        // alert("USE-EFFECT-TRIGGERED !!!\n\nproviderRef.current is: " + JSON.stringify(providerRef.current))
+        if (!providerRef.current) return;
+        // alert("sending local profile update: " + JSON.stringify(localProfile))
+        providerRef.current.sendProfileUpdate(localProfile);
+    }, [localProfile]);
+
     // Display default code for current language
     // (if have not joined an existing room AND editor is empty)
     useEffect(() => {
         const isJoinedExisitingRoom = !!pathParams.id
-        const yText = yDocRef.current.getText(`${currentLanguage}`);
+        const yText = yDocRef.current.getText(currentLanguage);
         const isEditorEmpty = yText.toString().length === 0;
         if (!isJoinedExisitingRoom && isEditorEmpty) {
             const runtime = runtimeRegistry[currentLanguage];
@@ -89,8 +101,9 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         <CollaborationContext.Provider
             value={{
                 yDoc: yDocRef.current,
+                localProfile,
                 remoteProfile,
-                sendProfileUpdate,
+                updateLocalProfile,
                 currentLanguage,
                 setCurrentLanguage,
                 isConnected,

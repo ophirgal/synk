@@ -1,55 +1,55 @@
 import React from "react";
 import { Camera, CameraOff, Mic, MicOff } from "lucide-react";
 
-import type { Profile } from "@/lib/collaboration";
+import type { Profile } from "@/lib/webrtc";
 
 interface VideoProps extends React.VideoHTMLAttributes<HTMLVideoElement> {
     withControls?: boolean,
-    remoteProfile?: Profile,
-    onTurnCameraOn?: () => void,
-    onTurnCameraOff?: () => void,
-    onTurnMicOn?: () => void,
-    onTurnMicOff?: () => void
+    profile: Profile,
+    isLocalProfile?: boolean,
+    onCameraToggle?: () => void,
+    onMicToggle?: () => void,
 }
 
 const Video: React.FC<VideoProps> = (props) => {
-    const [isCameraOn, setIsCameraOn] = React.useState(false);
-    const [isMicOn, setIsMicOn] = React.useState(false);
-
-    const handleMicToggle = () => {
-        isMicOn ? props.onTurnMicOff?.() : props.onTurnMicOn?.()
-        setIsMicOn(!isMicOn);
-    }
-    const handleCameraToggle = () => {
-        isCameraOn ? props.onTurnCameraOff?.() : props.onTurnCameraOn?.()
-        setIsCameraOn(!isCameraOn);
-    }
-
     const localIconProps = {
         size: 50,
         strokeWidth: 2,
-        className: "p-2 rounded cursor-pointer",
+        className: "pl-4 rounded cursor-pointer",
     }
 
     const remoteIconProps = {
         size: 50,
         strokeWidth: 2,
-        className: "p-2 rounded select-none text-border",
+        className: "pl-4 rounded select-none text-gray-400",
     }
 
     const nativeVideoProps = props as React.VideoHTMLAttributes<HTMLVideoElement>
 
     return <div className={`relative max-h-[100%] w-full rounded bg-black/5 dark:bg-white/5 ${props.hidden ? "hidden" : ""}`}>
-        {props.withControls &&
-            <div className="absolute bottom-2 left-2 flex w-full z-10">
-                {isMicOn ? <Mic onClick={handleMicToggle} {...localIconProps} /> : <MicOff onClick={handleMicToggle} {...localIconProps} />}
-                {isCameraOn ? <Camera onClick={handleCameraToggle} {...localIconProps} /> : <CameraOff onClick={handleCameraToggle} {...localIconProps} />}
+        {props.isLocalProfile ?
+            <div className="absolute bottom-0 flex w-full px-4 z-10 dark:bg-black/25 bg-white/25 rounded-b">
+                <div className="flex-1 w-full flex items-center justify-start">
+                    <p className="text-xl font-semibold truncate whitespace-nowrap max-w-50">{props.profile.username}</p>
+                </div>
+                {props.withControls &&
+                    <>
+                        {props.profile.isMicrophoneOn ? <Mic onClick={props.onMicToggle} {...localIconProps} /> : <MicOff onClick={props.onMicToggle} {...localIconProps} />}
+                        {props.profile.isCameraOn ? <Camera onClick={props.onCameraToggle} {...localIconProps} /> : <CameraOff onClick={props.onCameraToggle} {...localIconProps} />}
+                    </>
+                }
             </div>
-        }
-        {props.remoteProfile &&
-            <div className="absolute bottom-2 left-2 flex w-full z-10">
-                {props.remoteProfile.microphoneOn ? <Mic {...remoteIconProps} /> : <MicOff {...remoteIconProps} />}
-                {props.remoteProfile.cameraOn ? <Camera {...remoteIconProps} /> : <CameraOff {...remoteIconProps} />}
+            :
+            <div className="absolute bottom-0 flex w-full px-4 z-10 bg-gray-500/25 rounded-b">
+                <div className="flex-1 w-full flex items-center justify-start text-gray-400">
+                    <p className="text-xl font-semibold truncate whitespace-nowrap max-w-50">{props.profile.username}</p>
+                </div>
+                {props.withControls &&
+                    <>
+                        {props.profile.isMicrophoneOn ? <Mic {...remoteIconProps} /> : <MicOff {...remoteIconProps} />}
+                        {props.profile.isCameraOn ? <Camera {...remoteIconProps} /> : <CameraOff {...remoteIconProps} />}
+                    </>
+                }
             </div>
         }
         <video className={`rounded object-cover h-full w-full`} {...nativeVideoProps} />
