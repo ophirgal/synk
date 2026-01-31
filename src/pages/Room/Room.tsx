@@ -31,7 +31,7 @@ import {
     SheetContent,
     SheetTrigger,
 } from "@/components/ui/sheet"
-// import CodeEditor from "@/components/CodeEditor/CodeEditor"
+import CodeEditor from "@/components/CodeEditor/CodeEditor"
 import Video from "@/components/Video/Video"
 import { Button } from "@/components/ui/button"
 import { databaseService } from "@/services/FirebaseDatabaseService"
@@ -271,20 +271,20 @@ function RoomContent() {
                 <ResizableHandle withHandle />
                 {/* Code Editor Panel */}
                 <ResizablePanel className="editor-panel h-full p-4" defaultSize={50}>
-                    {/* <CodeEditor /> */}
+                    <CodeEditor />
                 </ResizablePanel>
                 {/* Video Panel */}
                 <ResizableHandle withHandle />
                 <ResizablePanel collapsible className="h-full flex flex-col justify-center items-center" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
                     <div className="flex flex-col justify-center items-center gap-4 p-4 max-h-100 ">
+                        <Video id={remoteVideoElementId} poster={avatarPlaceholder}
+                            autoPlay playsInline withControls
+                            profile={remoteProfile} hidden={!isPeerJoined}
+                        />
                         <Video id={localVideoElementId} poster={avatarPlaceholder}
                             autoPlay playsInline withControls muted
                             profile={localProfile} isLocalProfile
                             onCameraToggle={handleCameraToggle} onMicToggle={handleMicToggle}
-                        />
-                        <Video id={remoteVideoElementId} poster={avatarPlaceholder}
-                            autoPlay playsInline withControls
-                            profile={remoteProfile} hidden={!isPeerJoined}
                         />
                     </div>
                 </ResizablePanel>

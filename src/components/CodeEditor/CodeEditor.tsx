@@ -18,7 +18,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner";
-// import CursorWidget from "../CursorWidget"; // TODO: use this for remote cursor marker
+import CursorWidget from "../CursorWidget";
 import { runtimeRegistry, type RuntimeEngine } from "@/lib/runtimes";
 import { useCollaboration } from "@/context/CollaborationContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -27,10 +27,11 @@ import { useTheme } from "@/context/ThemeContext";
 export default function CodeEditor() {
     const [output, setOutput] = useState<string>("");
     const [isReadyToRun, setIsReadyToRun] = useState(false);
-    const [username, _] = useState<string>("user1"); // TODO: use this for local username
     const editorRef = useRef<monaco.IStandaloneCodeEditor | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
-    const { yDoc, currentLanguage, setCurrentLanguage } = useCollaboration();
+    const cursorWidgetRef = useRef<CursorWidget | null>(null);
+    const { yDoc, currentLanguage, setCurrentLanguage,
+        remoteProfile, localProfile, updateLocalProfile } = useCollaboration();
     const { isDarkMode } = useTheme();
 
     const runtime = useMemo<RuntimeEngine>(() => runtimeRegistry[currentLanguage], [currentLanguage]);
@@ -61,18 +62,9 @@ export default function CodeEditor() {
         const model = editor.getModel();
         if (!model) return;
 
-        // TODO: Set up cursor marker for peer edits
-        // const position = editor.getPosition() ?? { lineNumber: 0, column: 0 };
-        // const className = "bg-indigo-400 text-sm text-white px-1 absolute";
-        // const cursorWidget = new CursorWidget(username, position, className);
-        // editor.addContentWidget(cursorWidget);
+        // Update local profile when cursor position changes
         // editor.onDidChangeCursorPosition((e) => {
-        //     cursorWidget.getPosition = () => ({
-        //         position: e.position,
-        //         preference: cursorWidget.preference
-        //     });
-        //     editor.layoutContentWidget(cursorWidget)
-        //     cursorWidget.show(1000);
+        //     updateLocalProfile({ editors: { ...localProfile.editors, [runtime.languageId]: e.position } });
         // });
 
         // Destroy old binding if it exists
@@ -89,7 +81,32 @@ export default function CodeEditor() {
             bindingRef.current?.destroy();
             bindingRef.current = null;
         };
-    }, [runtime, username]);
+    }, [runtime]);
+
+    // Respond to remote cursor position changes 
+    useEffect(() => {
+        if (!editorRef.current) return;
+        const editor = editorRef.current;
+
+        // if (!cursorWidgetRef.current) {
+        //     cursorWidgetRef.current = new CursorWidget(
+        //         remoteProfile.username,
+        //         remoteProfile.editors[currentLanguage].position,
+        //         "bg-indigo-400 text-sm text-white px-1 absolute"
+        //     );
+        //     editor.addContentWidget(cursorWidgetRef.current);
+        // }
+        // 
+        // cursorWidgetRef.current.getPosition = () => ({
+        //     position: remoteProfile.editors[currentLanguage].position,
+        //     preference: cursorWidgetRef.current!.preference,
+        // });
+        // editor.layoutContentWidget(cursorWidgetRef.current)
+        // if (current remote cursor position different than last one) {
+        //     cursorWidgetRef.current.show(1000);
+        // }
+
+    }, [remoteProfile]);
 
     // Load the runtime
     useEffect(() => {

@@ -14,14 +14,14 @@ interface VideoProps extends React.VideoHTMLAttributes<HTMLVideoElement> {
 const Video: React.FC<VideoProps> = (props) => {
     const localIconProps = {
         size: 50,
-        strokeWidth: 2,
+        strokeWidth: 1,
         className: "pl-4 rounded cursor-pointer",
     }
 
     const remoteIconProps = {
         size: 50,
-        strokeWidth: 2,
-        className: "pl-4 rounded select-none text-gray-400",
+        strokeWidth: 1,
+        className: "pl-4 rounded select-none text-gray-300",
     }
 
     const nativeVideoProps = props as React.VideoHTMLAttributes<HTMLVideoElement>
@@ -30,7 +30,7 @@ const Video: React.FC<VideoProps> = (props) => {
         {props.isLocalProfile ?
             <div className="absolute bottom-0 flex w-full px-4 z-10 dark:bg-black/25 bg-white/25 rounded-b">
                 <div className="flex-1 w-full flex items-center justify-start">
-                    <p className="text-xl font-semibold truncate whitespace-nowrap max-w-50">{props.profile.username}</p>
+                    <p className="text-xl truncate whitespace-nowrap max-w-50">{props.profile.username}</p>
                 </div>
                 {props.withControls &&
                     <>
@@ -40,9 +40,9 @@ const Video: React.FC<VideoProps> = (props) => {
                 }
             </div>
             :
-            <div className="absolute bottom-0 flex w-full px-4 z-10 bg-gray-500/25 rounded-b">
-                <div className="flex-1 w-full flex items-center justify-start text-gray-400">
-                    <p className="text-xl font-semibold truncate whitespace-nowrap max-w-50">{props.profile.username}</p>
+            <div className="absolute bottom-0 flex w-full px-4 z-10 bg-gray-500/50 rounded-b">
+                <div className="flex-1 w-full flex items-center justify-start text-gray-300">
+                    <p className="text-xl truncate whitespace-nowrap max-w-50">{props.profile.username}</p>
                 </div>
                 {props.withControls &&
                     <>
