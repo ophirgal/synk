@@ -18,7 +18,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner";
-import CursorWidget from "../CursorWidget";
+// import CursorWidget from "../CursorWidget";
 import { runtimeRegistry, type RuntimeEngine } from "@/lib/runtimes";
 import { useCollaboration } from "@/context/CollaborationContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -29,9 +29,9 @@ export default function CodeEditor() {
     const [isReadyToRun, setIsReadyToRun] = useState(false);
     const editorRef = useRef<monaco.IStandaloneCodeEditor | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
-    const cursorWidgetRef = useRef<CursorWidget | null>(null);
+    // const cursorWidgetRef = useRef<CursorWidget | null>(null);
     const { yDoc, currentLanguage, setCurrentLanguage,
-        remoteProfile, localProfile, updateLocalProfile } = useCollaboration();
+        remoteProfile /*, localProfile, updateLocalProfile */ } = useCollaboration();
     const { isDarkMode } = useTheme();
 
     const runtime = useMemo<RuntimeEngine>(() => runtimeRegistry[currentLanguage], [currentLanguage]);
@@ -85,8 +85,8 @@ export default function CodeEditor() {
 
     // Respond to remote cursor position changes 
     useEffect(() => {
-        if (!editorRef.current) return;
-        const editor = editorRef.current;
+        // if (!editorRef.current) return;
+        // const editor = editorRef.current;
 
         // if (!cursorWidgetRef.current) {
         //     cursorWidgetRef.current = new CursorWidget(
