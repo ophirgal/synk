@@ -42,11 +42,11 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
 
     const handleRemoteProfileUpdate = (profile: Profile) => {
         // alert("received remote profile update: " + JSON.stringify(profile))
-        setRemoteProfile(profile);
+        setRemoteProfile(_ => ({ ...profile })); // important: force an update by creating a new object
     }
 
     const updateLocalProfile = useCallback((update: Partial<Profile>) => {
-        const updatedProfile = { ...localProfile, ...update };
+        const updatedProfile = { ...localProfile, ...update }; // important: force an update by creating a new object
         // alert("updating local profile: " + JSON.stringify(updatedProfile))
         setLocalProfile(updatedProfile);
     }, [localProfile]);
@@ -99,6 +99,7 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         // alert("USE-EFFECT-TRIGGERED !!!\n\nproviderRef.current is: " + JSON.stringify(providerRef.current))
         if (!providerRef.current) return;
         // alert("sending local profile update: " + JSON.stringify(localProfile))
+        providerRef.current.setLocalProfile(localProfile);
         providerRef.current.sendProfileUpdate(localProfile);
     }, [localProfile]);
 

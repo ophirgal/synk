@@ -206,7 +206,7 @@ function RoomContent() {
         })()
     }, [])
 
-    // Update remote video when peer joins
+    // Update remote video window when remote profile changes
     useEffect(() => {
         (async () => {
             if (isPeerJoined) {
@@ -214,8 +214,9 @@ function RoomContent() {
             }
             // Update remote video window with remote profile
             await toggleRemoteVideoSource(remoteProfile.isCameraOn)
+            // TODO: Update remote audio as well ?
         })()
-    }, [isPeerJoined, remoteProfile])
+    }, [isPeerJoined, remoteProfile.isCameraOn])
 
     return (
         <div className="h-full flex flex-col border-t">
@@ -277,7 +278,7 @@ function RoomContent() {
                 {/* Text Editor Panel */}
                 <ResizablePanel collapsible className="h-full p-4" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
                     {/* <div className="dark:bg-indigo-950 bg-indigo-100 p-4 h-full text-left" style={{ whiteSpace: "pre-line" }}> */}
-                        <TextEditor />
+                    <TextEditor />
                     {/* </div> */}
                 </ResizablePanel>
                 <ResizableHandle withHandle />
