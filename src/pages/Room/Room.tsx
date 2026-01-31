@@ -9,7 +9,8 @@ import {
     remoteVideoElementId,
 } from "@/constants/constants"
 import {
-    attachRemoteStreamToVideoElement,
+    ensureLocalStream,
+    ensureRemoteStream,
     createOfferForRoom,
     createAnswerForRoom,
     setRemoteAnswer,
@@ -18,7 +19,7 @@ import {
     getPeerConnection,
     toggleLocalCamera,
     toggleLocalMic,
-    attachLocalStreamToVideoElement,
+    toggleRemoteCamera,
 } from "@/lib/webrtc"
 import {
     ResizableHandle,
@@ -48,7 +49,7 @@ function RoomContent() {
     const navigate = useNavigate();
     const pathParams = useParams(); // get id path variable from the router!
     const { roomLink, setCurrentRoomId, copyRoomLink } = useRoom();
-    const { connectDataChannel } = useCollaboration();
+    const { connectDataChannel, remoteProfile, sendProfileUpdate } = useCollaboration();
     const { isDarkMode, setIsDarkMode } = useTheme();
 
 
@@ -176,15 +177,27 @@ function RoomContent() {
     const handleCopyRoomLink = () => copyRoomLink()
     const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode)
     const handleNewRoom = () => window.open('/rooms', '_blank')
-    const handleTurnCameraOn = () => toggleLocalCamera(true)
-    const handleTurnCameraOff = () => toggleLocalCamera(false)
-    const handleTurnMicOn = () => toggleLocalMic(true)
-    const handleTurnMicOff = () => toggleLocalMic(false)
+    const handleTurnCameraOn = () => {
+        toggleLocalCamera(true)
+        sendProfileUpdate({ cameraOn: true })
+    }
+    const handleTurnCameraOff = () => {
+        toggleLocalCamera(false)
+        sendProfileUpdate({ cameraOn: false })
+    }
+    const handleTurnMicOn = () => {
+        toggleLocalMic(true)
+        sendProfileUpdate({ microphoneOn: true })
+    }
+    const handleTurnMicOff = () => {
+        toggleLocalMic(false)
+        sendProfileUpdate({ microphoneOn: false })
+    }
 
     // Initialize the Room
     useEffect(() => {
         (async () => {
-            await attachLocalStreamToVideoElement(false, false) // cam & mic turned off until user action
+            await ensureLocalStream(false, false) // cam & mic turned off until user action
             if (pathParams.id) {
                 setCurrentRoomId(pathParams.id)
                 await joinRoom(pathParams.id)
@@ -197,10 +210,15 @@ function RoomContent() {
 
     // Update remote video when peer joins
     useEffect(() => {
-        if (isPeerJoined) {
-            attachRemoteStreamToVideoElement()
-        }
-    }, [isPeerJoined])
+        (async () => {
+            if (isPeerJoined) {
+                await ensureRemoteStream()
+            }
+            // Update remote video window with remote profile
+            await toggleRemoteCamera(remoteProfile.cameraOn)
+            await toggleRemoteCamera(remoteProfile.cameraOn)
+        })()
+    }, [isPeerJoined, remoteProfile])
 
     return (
         <div className="h-full flex flex-col border-t">
@@ -273,7 +291,9 @@ function RoomContent() {
                             onTurnMicOn={handleTurnMicOn}
                             onTurnMicOff={handleTurnMicOff}
                         />
-                        <Video id={remoteVideoElementId} poster={avatarPlaceholder} autoPlay playsInline hidden={!isPeerJoined} />
+                        <Video id={remoteVideoElementId} poster={avatarPlaceholder} autoPlay playsInline
+                            hidden={!isPeerJoined} remoteProfile={remoteProfile}
+                        />
                     </div>
                 </ResizablePanel>
             </ResizablePanelGroup >

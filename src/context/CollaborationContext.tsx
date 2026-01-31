@@ -10,11 +10,13 @@ import {
 import { useParams } from 'react-router';
 import * as Y from 'yjs';
 
-import { WebRTCProvider } from '@/lib/collaboration';
+import { WebRTCProvider, type Profile } from '@/lib/collaboration';
 import { runtimeRegistry } from '@/lib/runtimes';
 
 interface CollaborationContextType {
     yDoc: Y.Doc;
+    remoteProfile: Profile;
+    sendProfileUpdate: (update: Partial<Profile>) => void;
     currentLanguage: string;
     setCurrentLanguage: (language: string) => void;
     isConnected: boolean;
@@ -31,11 +33,30 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     const [isConnected, setIsConnected] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
     const [currentLanguage, setCurrentLanguage] = useState('python');
+    const [localProfile, setLocalProfile] = useState<Profile>({ cameraOn: false, microphoneOn: false });
+    const [remoteProfile, setRemoteProfile] = useState<Profile>({ cameraOn: false, microphoneOn: false });
     const pathParams = useParams(); // check if id path variable exists (joining an existing room)
+
+    const handleRemoteProfileUpdate = (profile: Profile) => {
+        setRemoteProfile(profile);
+    }
+
+    const sendProfileUpdate = (update: Partial<Profile>) => {
+        const updatedProfile = { ...localProfile, ...update };
+        setLocalProfile(updatedProfile);
+        providerRef.current?.sendProfileUpdate(updatedProfile);
+    }
+
+    const connectDataChannel = useCallback((channel: RTCDataChannel) => {
+        if (providerRef.current) {
+            providerRef.current.connect(channel);
+            setIsConnected(true);
+        }
+    }, []);
 
     // Initialize runtime engines and the WebRTC provider
     useEffect(() => {
-        providerRef.current = new WebRTCProvider(yDocRef.current);
+        providerRef.current = new WebRTCProvider(yDocRef.current, handleRemoteProfileUpdate);
 
         providerRef.current.onSynced = () => {
             setIsSynced(true);
@@ -64,18 +85,12 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         }
     }, [currentLanguage]);
 
-
-    const connectDataChannel = useCallback((channel: RTCDataChannel) => {
-        if (providerRef.current) {
-            providerRef.current.connect(channel);
-            setIsConnected(true);
-        }
-    }, []);
-
     return (
         <CollaborationContext.Provider
             value={{
                 yDoc: yDocRef.current,
+                remoteProfile,
+                sendProfileUpdate,
                 currentLanguage,
                 setCurrentLanguage,
                 isConnected,

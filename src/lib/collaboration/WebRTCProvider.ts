@@ -3,19 +3,27 @@ import * as Y from 'yjs';
 type SyncMessage =
     | { type: 'sync-step-1'; stateVector: number[] }
     | { type: 'sync-step-2'; diff: number[]; stateVector: number[] }
-    | { type: 'update'; data: number[] };
+    | { type: 'yjs-update'; data: number[] }
+    | { type: 'profile-update'; data: string };
+
+export type Profile = {
+    cameraOn: boolean;
+    microphoneOn: boolean;
+};
 
 export class WebRTCProvider {
     private doc: Y.Doc;
+    private onRemoteProfileUpdate: (profile: Profile) => void;
     private dataChannel: RTCDataChannel | null = null;
     private isConnected = false;
 
     onSynced?: () => void;
     onDisconnect?: () => void;
 
-    constructor(doc: Y.Doc) {
+    constructor(doc: Y.Doc, onRemoteProfileUpdate: (profile: Profile) => void) {
         this.doc = doc;
         this.doc.on('update', this.handleLocalUpdate);
+        this.onRemoteProfileUpdate = onRemoteProfileUpdate;
     }
 
     connect(dataChannel: RTCDataChannel): void {
@@ -37,7 +45,7 @@ export class WebRTCProvider {
         }
 
         this.sendMessage({
-            type: 'update',
+            type: 'yjs-update',
             data: Array.from(update),
         });
     };
@@ -53,8 +61,11 @@ export class WebRTCProvider {
                 case 'sync-step-2':
                     this.handleSyncStep2(message);
                     break;
-                case 'update':
-                    this.handleRemoteUpdate(message);
+                case 'yjs-update':
+                    this.handleRemoteYjsUpdate(message);
+                    break;
+                case 'profile-update':
+                    this.handleRemoteProfileUpdate(message);
                     break;
             }
         } catch (err) {
@@ -91,7 +102,7 @@ export class WebRTCProvider {
 
         if (ourDiff.length > 0) {
             this.sendMessage({
-                type: 'update',
+                type: 'yjs-update',
                 data: Array.from(ourDiff),
             });
         }
@@ -99,7 +110,19 @@ export class WebRTCProvider {
         this.onSynced?.();
     }
 
-    private handleRemoteUpdate(message: { data: number[] }): void {
+    public sendProfileUpdate = (profile: Profile): void => {
+        this.sendMessage({
+            type: 'profile-update',
+            data: JSON.stringify(profile),
+        });
+    }
+
+    private handleRemoteProfileUpdate(message: { data: string }): void {
+        const profile = JSON.parse(message.data) as Profile;
+        this.onRemoteProfileUpdate(profile);
+    }
+
+    private handleRemoteYjsUpdate(message: { data: number[] }): void {
         const update = new Uint8Array(message.data);
         Y.applyUpdate(this.doc, update, 'remote');
     }

@@ -1,16 +1,16 @@
 import React from "react";
 import { Camera, CameraOff, Mic, MicOff } from "lucide-react";
 
+import type { Profile } from "@/lib/collaboration";
 
 interface VideoProps extends React.VideoHTMLAttributes<HTMLVideoElement> {
     withControls?: boolean,
+    remoteProfile?: Profile,
     onTurnCameraOn?: () => void,
     onTurnCameraOff?: () => void,
     onTurnMicOn?: () => void,
     onTurnMicOff?: () => void
 }
-
-const avatarPlaceholderDataURI = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0MDAnIGhlaWdodD0nMzAwJyB2aWV3Qm94PScwIDAgMjQgMjQnIGZpbGw9J25vbmUnIHN0cm9rZT0nZ3JheScgb3BhY2l0eT0nMC4zJyBzdHJva2Utd2lkdGg9JzEnIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcgY2xhc3M9J2x1Y2lkZSBsdWNpZGUtY2lyY2xlLXVzZXItcm91bmQtaWNvbiBsdWNpZGUtY2lyY2xlLXVzZXItcm91bmQnPjxwYXRoIGQ9J00xOCAyMGE2IDYgMCAwIDAtMTIgMCcvPjxjaXJjbGUgY3g9JzEyJyBjeT0nMTAnIHI9JzQnLz48Y2lyY2xlIGN4PScxMicgY3k9JzEyJyByPScxMCcvPjwvc3ZnPg=='
 
 const Video: React.FC<VideoProps> = (props) => {
     const [isCameraOn, setIsCameraOn] = React.useState(false);
@@ -25,22 +25,33 @@ const Video: React.FC<VideoProps> = (props) => {
         setIsCameraOn(!isCameraOn);
     }
 
-    const iconProps = {
+    const localIconProps = {
         size: 50,
         strokeWidth: 2,
         className: "p-2 rounded cursor-pointer",
     }
 
+    const remoteIconProps = {
+        size: 50,
+        strokeWidth: 2,
+        className: "p-2 rounded select-none text-border",
+    }
+
     const nativeVideoProps = props as React.VideoHTMLAttributes<HTMLVideoElement>
 
-    return <div className={`relative max-h-[100%] w-full rounded bg-black/5 dark:bg-white/5 bg-size-[100%] bg-[url('${avatarPlaceholderDataURI}')] ${props.hidden ? "hidden" : ""}`}>
+    return <div className={`relative max-h-[100%] w-full rounded bg-black/5 dark:bg-white/5 ${props.hidden ? "hidden" : ""}`}>
         {props.withControls &&
             <div className="absolute bottom-2 left-2 flex w-full z-10">
-                {isMicOn ? <Mic onClick={handleMicToggle} {...iconProps} /> : <MicOff onClick={handleMicToggle} {...iconProps} />}
-                {isCameraOn ? <Camera onClick={handleCameraToggle} {...iconProps} /> : <CameraOff onClick={handleCameraToggle} {...iconProps} />}
+                {isMicOn ? <Mic onClick={handleMicToggle} {...localIconProps} /> : <MicOff onClick={handleMicToggle} {...localIconProps} />}
+                {isCameraOn ? <Camera onClick={handleCameraToggle} {...localIconProps} /> : <CameraOff onClick={handleCameraToggle} {...localIconProps} />}
             </div>
         }
-        {/* <video className={`rounded object-cover h-full w-full ${shouldShowVideoFeed ? '' : 'opacity-0'}`} {...nativeVideoProps} /> */}
+        {props.remoteProfile &&
+            <div className="absolute bottom-2 left-2 flex w-full z-10">
+                {props.remoteProfile.microphoneOn ? <Mic {...remoteIconProps} /> : <MicOff {...remoteIconProps} />}
+                {props.remoteProfile.cameraOn ? <Camera {...remoteIconProps} /> : <CameraOff {...remoteIconProps} />}
+            </div>
+        }
         <video className={`rounded object-cover h-full w-full`} {...nativeVideoProps} />
     </div>
 };

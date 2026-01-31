@@ -1,1 +1,1 @@
-export { WebRTCProvider } from './WebRTCProvider';
+export { WebRTCProvider, type Profile } from './WebRTCProvider';
