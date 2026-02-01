@@ -2,8 +2,10 @@ import { Outlet, useMatch } from "react-router"
 import { Toaster } from "sonner"
 
 import { navLinks } from "@/constants/constants"
+import { useTheme } from "@/context/ThemeContext"
 
 export default function Layout() {
+    const { isDarkMode } = useTheme()
     const isRoomPage = useMatch("/rooms/*")
     const shouldShowHeader = !isRoomPage
     const shouldShowFooter = !isRoomPage
@@ -29,7 +31,7 @@ export default function Layout() {
             }
             <main className={`flex-8 min-h-[600px]`}>
                 <Outlet />
-                <Toaster expand visibleToasts={10} />
+                <Toaster expand visibleToasts={10} theme={isDarkMode ? "dark" : "light"} />
             </main>
             {shouldShowFooter &&
                 <footer className="flex-1 flex text-gray-400 items-center justify-center">
