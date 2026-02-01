@@ -239,7 +239,7 @@ function RoomContent() {
                         :
                         <div className="text-sm flex items-center gap-2 text-muted-foreground dark:text-gray-100 whitespace-nowrap">
                             <Spinner data-icon="inline-start" />
-                            <strong>Creating Room...</strong>
+                            <strong>{pathParams.id ? 'Joining Room...' : 'Creating Room...'}</strong>
                         </div>
                     }
                 </div>
