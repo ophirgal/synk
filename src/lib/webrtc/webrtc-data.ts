@@ -39,7 +39,6 @@ export class WebRTCDataProvider {
         if (this.dataChannel.readyState === 'open') {
             this.isConnected = true;
             this.sendSyncStep1();
-            alert("this.localProfileRef.current: " + JSON.stringify(this.localProfileRef.current))
             this.sendProfileUpdate(this.localProfileRef.current);
         }
     }

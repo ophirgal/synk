@@ -1,4 +1,4 @@
-import { localVideoElementId, remoteVideoElementId } from "@/constants/constants";
+import { localVideoElementId, remoteAudioElementId, remoteVideoElementId } from "@/constants/constants";
 
 let peerConnection: RTCPeerConnection | null = null;
 let localStream: MediaStream | null = null;
@@ -399,18 +399,11 @@ const ensureLocalStream = async (cameraOn: boolean = false, microphoneOn: boolea
 };
 
 /**
- * Ensures a remote media stream is available and updates its enabled media types as specified.
+ * Ensures a remote media stream is available.
  * If the remote stream does not exist, it is initialized.
- * The remote video element is updated with the remote stream if the camera is enabled.
- * @param {boolean} cameraOn - Whether the video track should be enabled.
- * @returns {Promise<void>} - A promise that resolves when the remote stream has been updated.
  */
-const ensureRemoteStream = async (cameraOn: boolean = false): Promise<void> => {
-    if (!remoteStream) {
-        remoteStream = new MediaStream()
-    }
-    const remoteVideo = document.getElementById(remoteVideoElementId) as HTMLVideoElement
-    if (remoteVideo && cameraOn) remoteVideo.srcObject = remoteStream
+const ensureRemoteStream = () => {
+    if (!remoteStream) remoteStream = new MediaStream()
 };
 
 const toggleLocalCamera = async (cameraOn: boolean = true): Promise<void> => {
@@ -439,15 +432,31 @@ const toggleLocalMic = async (microphoneOn: boolean = true): Promise<void> => {
     });
 };
 
-const toggleRemoteVideoSource = async (cameraOn: boolean = true): Promise<void> => {
-    if (cameraOn && !remoteStream) {
-        await ensureRemoteStream(true);
-        return;
-    }
+const toggleRemoteVideoAndAudioSources = async (isVideoSrc: boolean = true, isMicSrc: boolean = true): Promise<void> => {
+    ensureRemoteStream();
+
     // inflate or nullify video source so as to display poster when needed
-    const remoteVideo = document.getElementById(remoteVideoElementId) as HTMLVideoElement
-    if (!remoteVideo) return;
-    remoteVideo.srcObject = cameraOn ? remoteStream : null
+    const remoteVideoEl = document.getElementById(remoteVideoElementId) as HTMLVideoElement
+    if (!remoteVideoEl) return;
+    remoteVideoEl.srcObject = isVideoSrc ? remoteStream : null
+
+    // nullify or inflate audio source (keeps remote audio playing when video is disabled)
+    // -- only inflate audio source when video source is nullified
+    const remoteAudioEl = getOrCreateAudioElement()
+    remoteAudioEl.srcObject = (isMicSrc && !remoteVideoEl.srcObject) ? remoteStream : null
+}
+
+// Ensures hidden audio element exists; 
+// serves as fallback player for remote audio when nullifying video element's stream.
+function getOrCreateAudioElement() {
+    let remoteAudioEl = document.getElementById(remoteAudioElementId) as HTMLAudioElement
+    if (!remoteAudioEl) {
+        remoteAudioEl = document.createElement('audio');
+        remoteAudioEl.style.display = 'none';
+        remoteAudioEl.autoplay = true;
+        document.body.appendChild(remoteAudioEl);
+    }
+    return remoteAudioEl;
 }
 
 const createOfferForRoom = async (
@@ -472,9 +481,7 @@ const createOfferForRoom = async (
     });
 
     peerConnection.ontrack = (event: RTCTrackEvent) => {
-        if (!remoteStream) remoteStream = new MediaStream();
-        const remoteVideo = document.getElementById(remoteVideoElementId) as HTMLVideoElement;
-        remoteVideo.srcObject = remoteStream;
+        toggleRemoteVideoAndAudioSources();
 
         event.streams.forEach(stream => {
             stream.getTracks().forEach(track => {
@@ -578,7 +585,7 @@ export {
     ensureRemoteStream,
     toggleLocalCamera,
     toggleLocalMic,
-    toggleRemoteVideoSource,
+    toggleRemoteVideoAndAudioSources,
     createOfferForRoom,
     createAnswerForRoom,
     isRemoteDescriptionSet,

@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Camera, CameraOff, Mic, MicOff } from "lucide-react";
 
 import type { Profile } from "@/lib/webrtc";
+import { remoteAudioElementId } from "@/constants/constants";
 
-interface VideoProps extends React.VideoHTMLAttributes<HTMLVideoElement> {
+interface LivestreamPlayerProps extends React.VideoHTMLAttributes<HTMLVideoElement> {
     withControls?: boolean,
     profile: Profile,
     isLocalProfile?: boolean,
@@ -11,7 +12,7 @@ interface VideoProps extends React.VideoHTMLAttributes<HTMLVideoElement> {
     onMicToggle?: () => void,
 }
 
-const Video: React.FC<VideoProps> = (props) => {
+const LivestreamPlayer: React.FC<LivestreamPlayerProps> = (props) => {
     const localIconProps = {
         size: 50,
         strokeWidth: 1,
@@ -56,4 +57,4 @@ const Video: React.FC<VideoProps> = (props) => {
     </div>
 };
 
-export default Video
+export default LivestreamPlayer

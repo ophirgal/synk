@@ -4,7 +4,7 @@ export {
     ensureRemoteStream,
     toggleLocalCamera,
     toggleLocalMic,
-    toggleRemoteVideoSource,
+    toggleRemoteVideoAndAudioSources,
     createOfferForRoom,
     createAnswerForRoom,
     isRemoteDescriptionSet,

@@ -19,7 +19,7 @@ import {
     // getPeerConnection,
     toggleLocalCamera,
     toggleLocalMic,
-    toggleRemoteVideoSource,
+    toggleRemoteVideoAndAudioSources,
 } from "@/lib/webrtc"
 import {
     ResizableHandle,
@@ -35,7 +35,7 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet"
 import CodeEditor from "@/components/CodeEditor/CodeEditor"
-import Video from "@/components/Video/Video"
+import LivestreamPlayer from "@/components/Video/Video"
 import { Button } from "@/components/ui/button"
 import { databaseService } from "@/services/FirebaseDatabaseService"
 import type { Room } from "@/services/DatabaseService"
@@ -206,17 +206,15 @@ function RoomContent() {
         })()
     }, [])
 
-    // Update remote video window when remote profile changes
+    // Update remote video and audio elements when peer has joined
     useEffect(() => {
         (async () => {
             if (isPeerJoined) {
-                await ensureRemoteStream()
+                // Update remote video window and hidden audio element with remote profile
+                await toggleRemoteVideoAndAudioSources(remoteProfile.isCameraOn, remoteProfile.isMicrophoneOn)
             }
-            // Update remote video window with remote profile
-            await toggleRemoteVideoSource(remoteProfile.isCameraOn)
-            // TODO: Update remote audio as well ?
         })()
-    }, [isPeerJoined, remoteProfile.isCameraOn])
+    }, [isPeerJoined, remoteProfile.isCameraOn, remoteProfile.isMicrophoneOn])
 
     return (
         <div className="h-full flex flex-col border-t">
@@ -290,11 +288,11 @@ function RoomContent() {
                 <ResizableHandle withHandle />
                 <ResizablePanel collapsible className="h-full flex flex-col justify-center items-center" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
                     <div className="flex flex-col justify-center items-center gap-4 p-4 max-h-100 ">
-                        <Video id={remoteVideoElementId} poster={avatarPlaceholder}
+                        <LivestreamPlayer id={remoteVideoElementId} poster={avatarPlaceholder}
                             autoPlay playsInline withControls
                             profile={remoteProfile} hidden={!isPeerJoined}
                         />
-                        <Video id={localVideoElementId} poster={avatarPlaceholder}
+                        <LivestreamPlayer id={localVideoElementId} poster={avatarPlaceholder}
                             autoPlay playsInline withControls muted
                             profile={localProfile} isLocalProfile
                             onCameraToggle={handleCameraToggle} onMicToggle={handleMicToggle}
