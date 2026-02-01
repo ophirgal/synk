@@ -1,6 +1,15 @@
 import { Outlet, useMatch } from "react-router"
 import { Toaster } from "sonner"
+import { Menu } from "lucide-react"
 
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+    SheetTrigger,
+} from "@/components/ui/sheet"
 import { navLinks } from "@/constants/constants"
 import { useTheme } from "@/context/ThemeContext"
 
@@ -13,10 +22,10 @@ export default function Layout() {
     return (
         <div className="flex flex-col h-screen w-screen bg-gradient-to-br dafrom-blue-50 to-indigo-100 dark:from-black dark:to-indigo-800">
             {shouldShowHeader &&
-                <header className="flex items-center justify-between px-8 h-[75px]">
-                    <a href="/" className="text-5xl font-bold no-underline text-indigo-500 hover:text-indigo-400 dark:text-indigo-400 dark:hover:text-indigo-300 active:text-indigo-600 transition-colors select-none">[synk]</a>
+                <header className="flex items-center justify-between px-4 sm:px-8 h-[60px] sm:h-[75px]">
+                    <a href="/" className="text-3xl sm:text-5xl font-bold no-underline text-indigo-500 hover:text-indigo-400 dark:text-indigo-400 dark:hover:text-indigo-300 active:text-indigo-600 transition-colors select-none">[synk]</a>
 
-                    <nav className="flex justify-end gap-6">
+                    <nav className="hidden sm:flex justify-end gap-3 sm:gap-6 text-sm sm:text-base">
                         {navLinks.map((link) => (
                             <a
                                 key={link.label}
@@ -27,6 +36,30 @@ export default function Layout() {
                             </a>
                         ))}
                     </nav>
+                    <div className="sm:hidden">
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <Menu className="cursor-pointer rounded text-indigo-500 hover:text-indigo-400 h-8 w-8 ml-2" />
+                            </SheetTrigger>
+                            <SheetContent side="right" className="w-[250px]">
+                                <SheetHeader>
+                                    <SheetTitle></SheetTitle>
+                                    <SheetDescription></SheetDescription>
+                                </SheetHeader>
+                                <nav className="flex flex-col gap-8 mt-6">
+                                    {navLinks.map((link) => (
+                                        <a
+                                            key={link.label}
+                                            href={link.href}
+                                            className="text-3xl text-indigo-500 hover:text-indigo-400 active:text-indigo-600 transition-colors"
+                                        >
+                                            {link.label}
+                                        </a>
+                                    ))}
+                                </nav>
+                            </SheetContent>
+                        </Sheet>
+                    </div>
                 </header>
             }
             <main className={`flex-8 min-h-[600px]`}>
@@ -34,7 +67,7 @@ export default function Layout() {
                 <Toaster expand visibleToasts={10} theme={isDarkMode ? "dark" : "light"} />
             </main>
             {shouldShowFooter &&
-                <footer className="flex-1 flex text-gray-400 items-center justify-center">
+                <footer className="flex-1 flex text-gray-400 items-center justify-center px-4 text-sm sm:text-base">
                     <p>&copy; 2026 synk.<br />All rights reserved.</p>
                 </footer>
             }
