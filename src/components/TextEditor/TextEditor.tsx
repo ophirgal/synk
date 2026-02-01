@@ -88,11 +88,11 @@ export default function TextEditor() {
             <div className="flex justify-between">
                 <h1 className="flex items-center">Notes</h1>
                 <div className="flex justify-end gap-2">
-                    <Button disabled={!isEditorReady} onClick={handleIncreaseFontSize} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
-                        <AArrowUp className="h-4 w-42" />
-                    </Button>
                     <Button disabled={!isEditorReady} onClick={handleDecreaseFontSize} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
                         <AArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button disabled={!isEditorReady} onClick={handleIncreaseFontSize} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                        <AArrowUp className="h-4 w-42" />
                     </Button>
                 </div>
             </div>
