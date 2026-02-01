@@ -10,7 +10,6 @@ import {
 } from "@/constants/constants"
 import {
     ensureLocalStream,
-    ensureRemoteStream,
     createOfferForRoom,
     createAnswerForRoom,
     setRemoteAnswer,

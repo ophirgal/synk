@@ -452,6 +452,7 @@ function getOrCreateAudioElement() {
     let remoteAudioEl = document.getElementById(remoteAudioElementId) as HTMLAudioElement
     if (!remoteAudioEl) {
         remoteAudioEl = document.createElement('audio');
+        remoteAudioEl.id = remoteAudioElementId;
         remoteAudioEl.style.display = 'none';
         remoteAudioEl.autoplay = true;
         document.body.appendChild(remoteAudioEl);
