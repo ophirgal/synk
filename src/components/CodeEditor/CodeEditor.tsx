@@ -167,16 +167,17 @@ export default function CodeEditor() {
                         <AArrowDown className="h-4 w-4" />
                     </Button>
                     <Button disabled={!isReadyToRun} onClick={handleIncreaseFontSize} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
-                        <AArrowUp className="h-4 w-42" />
+                        <AArrowUp className="h-4 w-4" />
                     </Button>
                     <Button disabled={!isReadyToRun} onClick={handleRun} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
                         {isReadyToRun ?
                             <>
                                 <Play className="h-4 w-4" />
-                                <span className="hidden sm:inline">Run</span>
+                                Run
                             </>
                             :
-                            <><Spinner data-icon="inline-start" />
+                            <>
+                                <Spinner data-icon="inline-start" />
                                 Loading...
                             </>
                         }
