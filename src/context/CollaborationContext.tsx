@@ -30,15 +30,18 @@ interface CollaborationContextType {
 const CollaborationContext = createContext<CollaborationContextType | null>(null);
 
 export function CollaborationProvider({ children }: { children: ReactNode }) {
-    const yDocRef = useRef<Y.Doc>(new Y.Doc());
-    const providerRef = useRef<WebRTCDataProvider | null>(null);
-
     const [isConnected, setIsConnected] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
     const [currentLanguage, setCurrentLanguage] = useState('python');
     const [localProfile, setLocalProfile] = useState<Profile>({ username: generateUsername(), isCameraOn: false, isMicrophoneOn: false });
     const [remoteProfile, setRemoteProfile] = useState<Profile>({ username: '', isCameraOn: false, isMicrophoneOn: false });
     const pathParams = useParams(); // check if id path variable exists (joining an existing room)
+
+    const yDocRef = useRef<Y.Doc>(new Y.Doc());
+    const providerRef = useRef<WebRTCDataProvider | null>(null);
+    // maintain reference to latest local profile to be used by external WebRTCDataProvider
+    const localProfileRef = useRef(localProfile);
+    localProfileRef.current = localProfile;
 
     const handleRemoteProfileUpdate = (profile: Profile) => {
         // alert("received remote profile update: " + JSON.stringify(profile))
@@ -72,8 +75,7 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
 
     // Initialize [used to be: init runtime engines] and the WebRTC provider (meant to run only once.)
     useEffect(() => {
-        const initialProfile = localProfile; // using the initial state value (do not add dependencies)
-        providerRef.current = new WebRTCDataProvider(yDocRef.current, initialProfile, handleRemoteProfileUpdate);
+        providerRef.current = new WebRTCDataProvider(yDocRef.current, localProfileRef, handleRemoteProfileUpdate);
 
         providerRef.current.onSynced = () => {
             setIsSynced(true);
@@ -99,7 +101,6 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         // alert("USE-EFFECT-TRIGGERED !!!\n\nproviderRef.current is: " + JSON.stringify(providerRef.current))
         if (!providerRef.current) return;
         // alert("sending local profile update: " + JSON.stringify(localProfile))
-        providerRef.current.setLocalProfile(localProfile);
         providerRef.current.sendProfileUpdate(localProfile);
     }, [localProfile]);
 

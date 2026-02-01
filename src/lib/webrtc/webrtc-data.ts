@@ -14,7 +14,7 @@ export type Profile = {
 
 export class WebRTCDataProvider {
     private doc: Y.Doc;
-    private localProfile: Profile;
+    private localProfileRef: { current: Profile };
     private onRemoteProfileUpdate: (profile: Profile) => void;
     private dataChannel: RTCDataChannel | null = null;
     private isConnected = false;
@@ -22,10 +22,10 @@ export class WebRTCDataProvider {
     onSynced?: () => void;
     onDisconnect?: () => void;
 
-    constructor(doc: Y.Doc, initialLocalProfile: Profile, onRemoteProfileUpdate: (profile: Profile) => void) {
+    constructor(doc: Y.Doc, localProfileRef: { current: Profile }, onRemoteProfileUpdate: (profile: Profile) => void) {
         this.doc = doc;
         this.doc.on('update', this.handleLocalDocUpdate);
-        this.localProfile = initialLocalProfile;
+        this.localProfileRef = localProfileRef;
         this.onRemoteProfileUpdate = onRemoteProfileUpdate;
     }
 
@@ -39,7 +39,8 @@ export class WebRTCDataProvider {
         if (this.dataChannel.readyState === 'open') {
             this.isConnected = true;
             this.sendSyncStep1();
-            this.sendProfileUpdate(this.localProfile);
+            alert("this.localProfileRef.current: " + JSON.stringify(this.localProfileRef.current))
+            this.sendProfileUpdate(this.localProfileRef.current);
         }
     }
 
@@ -112,10 +113,6 @@ export class WebRTCDataProvider {
         }
 
         this.onSynced?.();
-    }
-
-    public setLocalProfile(profile: Profile): void {
-        this.localProfile = profile;
     }
 
     public sendProfileUpdate = (profile: Profile): void => {
