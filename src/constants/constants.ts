@@ -1,8 +1,8 @@
 const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/", label: "Pricing" },
-    { href: "/", label: "FAQ" },
-    { href: "/", label: "Contact" },
+    { href: "#pricing", label: "Pricing" },
+    { href: "#faq", label: "FAQ" },
+    { href: "#contact", label: "Contact" },
 ]
 
 const localVideoElementId = "local-video"
