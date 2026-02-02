@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router"
 import { toast } from "sonner"
-import { Copy, Plus, Menu, Moon, Sun } from "lucide-react"
+import { Copy, Plus, Menu, Moon, Sun, ArrowLeftRight, ArrowRightLeft } from "lucide-react"
 
 import {
     navLinks,
@@ -55,7 +55,7 @@ function RoomContent() {
     const pathParams = useParams(); // get id path variable from the router!
     const { roomLink, setCurrentRoomId, copyRoomLink } = useRoom();
     const { connectDataChannel, localProfile, remoteProfile, updateLocalProfile } = useCollaboration();
-    const { isDarkMode, setIsDarkMode } = useTheme();
+    const { isDarkMode, setIsDarkMode, direction, setDirection } = useTheme();
 
 
     const createRoom = async () => {
@@ -181,7 +181,8 @@ function RoomContent() {
 
     const handleCopyRoomLink = () => copyRoomLink()
     const handleNewRoom = () => window.open('/rooms', '_blank')
-    const handleToggleDarkMode = useCallback(() => setIsDarkMode(!isDarkMode), [isDarkMode])
+    const handleToggleDirection = () => setDirection(direction => direction === 'ltr' ? 'rtl' : 'ltr')
+    const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode)
     const handleCameraToggle = useCallback(async () => {
         await toggleLocalCamera(!localProfile.isCameraOn)
         updateLocalProfile({ isCameraOn: !localProfile.isCameraOn })
@@ -241,8 +242,11 @@ function RoomContent() {
                     }
                 </div>
                 <div className="flex gap-2">
+                    <Button onClick={handleToggleDirection} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                        {direction === 'rtl' ? <ArrowLeftRight strokeWidth={3} /> : <ArrowRightLeft strokeWidth={3} />}
+                    </Button>
                     <Button onClick={handleToggleDarkMode} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
-                        {isDarkMode ? <Sun strokeWidth={3} /> : <Moon strokeWidth={3} />}
+                        {isDarkMode ? <Moon strokeWidth={3} /> : <Sun strokeWidth={3} />}
                     </Button>
                     <Button onClick={handleNewRoom} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
                         <Plus strokeWidth={3} />New Room
@@ -271,21 +275,21 @@ function RoomContent() {
                     </Sheet>
                 </div>
             </nav >
-            <ResizablePanelGroup className="h-full" orientation="horizontal">
+            <ResizablePanelGroup className="h-full" orientation="horizontal" dir={direction}>
                 {/* Text Editor Panel */}
-                <ResizablePanel collapsible className="h-full p-4" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
+                <ResizablePanel collapsible className="h-full p-4" dir="ltr" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
                     {/* <div className="dark:bg-indigo-950 bg-indigo-100 p-4 h-full text-left" style={{ whiteSpace: "pre-line" }}> */}
                     <TextEditor />
                     {/* </div> */}
                 </ResizablePanel>
                 <ResizableHandle withHandle />
                 {/* Code Editor Panel */}
-                <ResizablePanel className="h-full p-4" defaultSize={50}>
+                <ResizablePanel className="h-full p-4" dir="ltr" defaultSize={50}>
                     <CodeEditor />
                 </ResizablePanel>
                 {/* Video Panel */}
                 <ResizableHandle withHandle />
-                <ResizablePanel collapsible className="h-full flex flex-col justify-center items-center" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
+                <ResizablePanel collapsible className="h-full flex flex-col justify-center items-center" dir="ltr" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
                     <div className="flex flex-col justify-center items-center gap-4 p-4 max-h-100 ">
                         <LivestreamPlayer id={remoteVideoElementId} poster={avatarPlaceholder}
                             autoPlay playsInline withControls
