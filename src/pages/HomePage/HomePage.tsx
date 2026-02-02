@@ -22,7 +22,7 @@ const pricingTiers = [
         ],
         cta: "[synk] Up!",
         ctaHref: "/rooms",
-        highlighted: false,
+        highlighted: true,
     },
     {
         name: "Pro",
@@ -38,7 +38,7 @@ const pricingTiers = [
         ],
         cta: "Coming Soon",
         ctaHref: "#",
-        highlighted: true,
+        highlighted: false,
     },
     {
         name: "Enterprise",
@@ -59,12 +59,12 @@ const pricingTiers = [
 
 const faqItems = [
     {
-        question: "What is synk?",
-        answer: "synk is a real-time collaborative coding platform that combines a code editor, shared text editor, and live video conferencing — all in your browser. No downloads, no accounts required. You can use it for teaching, work, interviews, or anything else you dream of!",
+        question: "What is [synk]?",
+        answer: "[synk] is a real-time collaborative coding platform that combines a code editor, shared text editor, and live video conferencing — all in your browser. No downloads, no accounts required. You can use it for teaching, work, interviews, or anything else you dream of!",
     },
     {
         question: "Do I need to create an account?",
-        answer: "No. synk is designed for zero-friction collaboration. Just create a room and share the link with your partner. No signup, no login.",
+        answer: "No. [synk] is designed for zero-friction collaboration. Just create a room and share the link with your partner. No signup, no login.",
     },
     {
         question: "How do I use this?",
@@ -199,7 +199,7 @@ export default function HomePage() {
                         Frequently Asked Questions
                     </h2>
                     <p className="text-center text-gray-600 dark:text-gray-300 mb-12">
-                        Everything you need to know about synk.
+                        Everything you need to know about [synk].
                     </p>
                     <Accordion type="single" collapsible className="w-full">
                         {faqItems.map((item, i) => (
@@ -227,7 +227,7 @@ export default function HomePage() {
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                         <a
-                            href="mailto:hello@synk.dev"
+                            href="mailto:ophirgal2@gmail.com"
                             className="flex items-center gap-3 px-6 py-3 rounded-lg bg-white/60 dark:bg-white/5 ring-1 ring-gray-200 dark:ring-white/10 text-gray-900 dark:text-gray-100 hover:ring-indigo-400 transition-all"
                         >
                             <Mail className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
