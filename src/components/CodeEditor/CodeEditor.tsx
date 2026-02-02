@@ -172,7 +172,7 @@ export default function CodeEditor() {
         scrollOutputContainerToBottom();
     }, [output])
 
-    // Observe yText updates (both local and remote updates).
+    // Observe yText output console updates (both local and remote updates).
     // Update local output console if peers are currently looking at the same language.
     useEffect(() => {
         const observerRemovers: (() => void)[] = []
