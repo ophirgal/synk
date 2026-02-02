@@ -172,6 +172,8 @@ export default function CodeEditor() {
         scrollOutputContainerToBottom();
     }, [output])
 
+    // Observe yText updates (both local and remote updates).
+    // Update local output console if peers are currently looking at the same language.
     useEffect(() => {
         const observerRemovers: (() => void)[] = []
 
@@ -179,7 +181,6 @@ export default function CodeEditor() {
             const sharedOutputId = `${languageId}-output`;
             const yText = yDoc.getText(sharedOutputId);
 
-            // observe yText updates (both local and remote updates) and update local output
             const handler = () => {
                 if (currentLanguage === languageId) {
                     setOutput(yText.toString())
