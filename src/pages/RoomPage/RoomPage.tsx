@@ -181,7 +181,7 @@ function RoomContent() {
 
     const handleCopyRoomLink = () => copyRoomLink()
     const handleNewRoom = () => window.open('/rooms', '_blank')
-    const handleToggleDirection = () => setDirection(direction => direction === 'ltr' ? 'rtl' : 'ltr')
+    const handleToggleDirection = () => setDirection(direction === 'ltr' ? 'rtl' : 'ltr')
     const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode)
     const handleCameraToggle = useCallback(async () => {
         await toggleLocalCamera(!localProfile.isCameraOn)
