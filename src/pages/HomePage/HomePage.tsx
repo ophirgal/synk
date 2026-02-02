@@ -80,7 +80,7 @@ const faqItems = [
     },
     {
         question: "Is my code secure?",
-        answer: "Your code is executed on your machine and transmitted peer-to-peer using WebRTC, meaning it goes directly between you and your collaborator without passing through our servers. Room data is ephemeral and not stored after the session ends.",
+        answer: "Your code is transmitted using peer-to-peer connections, meaning it goes directly between you and your collaborator without passing through our servers. Room data is ephemeral and not stored after the session ends.",
     },
     {
         question: "What programming languages are supported?",
