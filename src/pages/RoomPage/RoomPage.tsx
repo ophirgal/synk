@@ -260,12 +260,12 @@ function RoomContent() {
                                 <SheetTitle></SheetTitle>
                                 <SheetDescription></SheetDescription>
                             </SheetHeader>
-                            <nav className="flex flex-col gap-4 mt-6">
+                            <nav className="flex flex-col gap-8 mt-6">
                                 {navLinks.map((link) => (
                                     <a
                                         key={link.label}
                                         href={link.href}
-                                        className="text-lg text-indigo-500 hover:text-indigo-400 active:text-indigo-600 transition-colors"
+                                        className="text-3xl text-indigo-500 hover:text-indigo-400 active:text-indigo-600 transition-colors"
                                     >
                                         {link.label}
                                     </a>

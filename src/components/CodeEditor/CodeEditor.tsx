@@ -50,7 +50,8 @@ export default function CodeEditor() {
     };
 
     const handleDecreaseFontSize = () => {
-        setFontSize((prevFontSize) => Math.max(prevFontSize - 1, 1));
+        console.log("font size", fontSize);
+        setFontSize((prevFontSize) => Math.max(prevFontSize - 1, 7));
     };
 
     const handleRun = useCallback(async () => {
@@ -258,7 +259,7 @@ export default function CodeEditor() {
                             </div>
                         }
                         {isReadyToRun ?
-                            <div className="text-xs text-left">
+                            <div className="text-left" style={{ fontSize: fontSize + "px" }}>
                                 {
                                     output ?
                                         <pre>{output}</pre>
