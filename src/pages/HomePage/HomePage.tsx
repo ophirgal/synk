@@ -60,27 +60,31 @@ const pricingTiers = [
 const faqItems = [
     {
         question: "What is synk?",
-        answer: "synk is a real-time collaborative coding platform that combines a code editor, shared text editor, and live video/audio — all in your browser. No downloads, no accounts required.",
+        answer: "synk is a real-time collaborative coding platform that combines a code editor, shared text editor, and live video conferencing — all in your browser. No downloads, no accounts required. You can use it for teaching, work, interviews, or anything else you dream of!",
     },
     {
         question: "Do I need to create an account?",
         answer: "No. synk is designed for zero-friction collaboration. Just create a room and share the link with your partner. No signup, no login.",
     },
     {
-        question: "How many people can join a room?",
-        answer: "Each room supports 1-on-1 collaboration — you and one other person. This keeps the experience fast, focused, and personal.",
+        question: "How do I use this?",
+        answer: "You simply create a room ([synk] up!) and share the link with your partner. Once they join, they'll see the code editor, video/audio, and text editor. You can type and run code in real-time.",
     },
     {
-        question: "Is synk free to use?",
+        question: "How many people can join a room?",
+        answer: "Our free tier supports up to 2 participants for 1-on-1 collaboration. We're working on Pro and Enterprise tiers with additional features.",
+    },
+    {
+        question: "Is [synk] free to use?",
         answer: "Yes! The core experience — code editor, video/audio, and text editor — is completely free. We're working on Pro and Enterprise tiers with additional features.",
     },
     {
         question: "Is my code secure?",
-        answer: "Your code is transmitted peer-to-peer using WebRTC, meaning it goes directly between you and your collaborator without passing through our servers. Room data is ephemeral and not stored after the session ends.",
+        answer: "Your code is executed on your machine and transmitted peer-to-peer using WebRTC, meaning it goes directly between you and your collaborator without passing through our servers. Room data is ephemeral and not stored after the session ends.",
     },
     {
         question: "What programming languages are supported?",
-        answer: "The code editor supports syntax highlighting for most popular languages. Code execution is currently available for JavaScript and Python, with more languages coming soon.",
+        answer: "[synk] currently supports Python and JavaScript, with more languages coming soon.",
     },
 ]
 
@@ -137,21 +141,18 @@ export default function HomePage() {
                         {pricingTiers.map((tier) => (
                             <div
                                 key={tier.name}
-                                className={`rounded-xl p-6 sm:p-8 flex flex-col ${
-                                    tier.highlighted
-                                        ? "bg-indigo-600 text-white ring-2 ring-indigo-500 shadow-xl scale-[1.02]"
-                                        : "bg-white/60 dark:bg-white/5 ring-1 ring-gray-200 dark:ring-white/10"
-                                }`}
+                                className={`rounded-xl p-6 sm:p-8 flex flex-col ${tier.highlighted
+                                    ? "bg-indigo-600 text-white ring-2 ring-indigo-500 shadow-xl scale-[1.02]"
+                                    : "bg-white/60 dark:bg-white/5 ring-1 ring-gray-200 dark:ring-white/10"
+                                    }`}
                             >
-                                <h3 className={`text-xl font-semibold mb-2 ${
-                                    tier.highlighted ? "text-white" : "text-gray-900 dark:text-gray-100"
-                                }`}>
+                                <h3 className={`text-xl font-semibold mb-2 ${tier.highlighted ? "text-white" : "text-gray-900 dark:text-gray-100"
+                                    }`}>
                                     {tier.name}
                                 </h3>
                                 <div className="mb-4">
-                                    <span className={`text-4xl font-bold ${
-                                        tier.highlighted ? "text-white" : "text-gray-900 dark:text-gray-100"
-                                    }`}>
+                                    <span className={`text-4xl font-bold ${tier.highlighted ? "text-white" : "text-gray-900 dark:text-gray-100"
+                                        }`}>
                                         {tier.price}
                                     </span>
                                     {tier.period && (
@@ -160,20 +161,17 @@ export default function HomePage() {
                                         </span>
                                     )}
                                 </div>
-                                <p className={`text-sm mb-6 ${
-                                    tier.highlighted ? "text-indigo-100" : "text-gray-600 dark:text-gray-400"
-                                }`}>
+                                <p className={`text-sm mb-6 ${tier.highlighted ? "text-indigo-100" : "text-gray-600 dark:text-gray-400"
+                                    }`}>
                                     {tier.description}
                                 </p>
                                 <ul className="space-y-3 mb-8 flex-1">
                                     {tier.features.map((feature) => (
                                         <li key={feature} className="flex items-start gap-2">
-                                            <Check className={`h-5 w-5 shrink-0 mt-0.5 ${
-                                                tier.highlighted ? "text-indigo-200" : "text-indigo-500 dark:text-indigo-400"
-                                            }`} />
-                                            <span className={`text-sm ${
-                                                tier.highlighted ? "text-indigo-50" : "text-gray-700 dark:text-gray-300"
-                                            }`}>
+                                            <Check className={`h-5 w-5 shrink-0 mt-0.5 ${tier.highlighted ? "text-indigo-200" : "text-indigo-500 dark:text-indigo-400"
+                                                }`} />
+                                            <span className={`text-sm ${tier.highlighted ? "text-indigo-50" : "text-gray-700 dark:text-gray-300"
+                                                }`}>
                                                 {feature}
                                             </span>
                                         </li>
@@ -181,11 +179,10 @@ export default function HomePage() {
                                 </ul>
                                 <a
                                     href={tier.ctaHref}
-                                    className={`block text-center font-semibold py-3 rounded-lg transition-colors ${
-                                        tier.highlighted
-                                            ? "bg-white text-indigo-600 hover:bg-indigo-50"
-                                            : "bg-indigo-600 text-white hover:bg-indigo-700"
-                                    }`}
+                                    className={`block text-center font-semibold py-3 rounded-lg transition-colors ${tier.highlighted
+                                        ? "bg-white text-indigo-600 hover:bg-indigo-50"
+                                        : "bg-indigo-600 text-white hover:bg-indigo-700"
+                                        }`}
                                 >
                                     {tier.cta}
                                 </a>
