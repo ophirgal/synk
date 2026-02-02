@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import MonacoEditor from "@monaco-editor/react";
 import { editor as monaco } from "monaco-editor";
 import { MonacoBinding } from "y-monaco";
-import { AArrowDown, AArrowUp, GripHorizontal, Play } from "lucide-react";
+import { AArrowDown, AArrowUp, GripHorizontal, Play, Trash2 } from "lucide-react";
 
 import {
     ResizablePanel,
@@ -91,6 +91,10 @@ export default function CodeEditor() {
             bindingRef.current = null;
         };
     }, [runtime]);
+
+    const handleClearOutput = () => {
+        setOutput("");
+    };
 
     // Respond to remote cursor position changes 
     useEffect(() => {
@@ -203,7 +207,15 @@ export default function CodeEditor() {
                     <ResizableHandle withHandle
                         className="flex justify-center items-center w-full h-[15px] bg-transparent hover:bg-indigo-100 dark:hover:bg-indigo-900"
                         customHandle={<GripHorizontal className="size-2.5" />} />
-                    <ResizablePanel id="output-panel" className="border p-2 pb-2 bg-gray-50 dark:bg-neutral-800 text-gray-500 dark:text-gray-400 overflow-y-scroll" defaultSize={35}>
+                    <ResizablePanel id="output-panel" className="relative border p-2 pb-2 bg-gray-50 dark:bg-neutral-800 text-gray-500 dark:text-gray-400 overflow-y-scroll" defaultSize={35}>
+                        {output &&
+                            <div className="sticky top-0 z-10 h-0 flex justify-end">
+                                <Button disabled={!output} variant="ghost" size="sm" onClick={handleClearOutput} title="Clear output"
+                                    className="p-1 rounded hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                            </div>
+                        }
                         {isReadyToRun ?
                             <div className="text-xs text-left">
                                 {
