@@ -18,7 +18,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner";
-// import CursorWidget from "../CursorWidget";
+// import CursorWidget from "../CursorWidget/CursorWidget";
 import { runtimeRegistry, type RuntimeEngine } from "@/lib/runtimes";
 import { useCollaboration } from "@/context/CollaborationContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -33,7 +33,7 @@ export default function CodeEditor() {
     const outputContainerRef = useRef<HTMLDivElement>(null);
     // const cursorWidgetRef = useRef<CursorWidget | null>(null);
     const { yDoc, currentLanguage, setCurrentLanguage,
-        remoteProfile /*, localProfile, updateLocalProfile */ } = useCollaboration();
+        /* remoteProfile, localProfile, updateLocalProfile */ } = useCollaboration();
     const { isDarkMode } = useTheme();
 
     const runtime = useMemo<RuntimeEngine>(() => runtimeRegistry[currentLanguage], [currentLanguage]);
@@ -109,29 +109,31 @@ export default function CodeEditor() {
     }, [runtime]);
 
     // Respond to remote cursor position changes 
-    useEffect(() => {
-        // if (!editorRef.current) return;
-        // const editor = editorRef.current;
+    // useEffect(() => {
+    //     if (!editorRef.current) return;
+    //     const editor = editorRef.current;
 
-        // if (!cursorWidgetRef.current) {
-        //     cursorWidgetRef.current = new CursorWidget(
-        //         remoteProfile.username,
-        //         remoteProfile.editors[currentLanguage].position,
-        //         "bg-indigo-400 text-sm text-white px-1 absolute"
-        //     );
-        //     editor.addContentWidget(cursorWidgetRef.current);
-        // }
-        // 
-        // cursorWidgetRef.current.getPosition = () => ({
-        //     position: remoteProfile.editors[currentLanguage].position,
-        //     preference: cursorWidgetRef.current!.preference,
-        // });
-        // editor.layoutContentWidget(cursorWidgetRef.current)
-        // if (current remote cursor position different than last one) {
-        //     cursorWidgetRef.current.show(1000);
-        // }
+    //     if (!cursorWidgetRef.current) {
+    //         cursorWidgetRef.current = new CursorWidget(
+    //             remoteProfile.username,
+    //             // remoteProfile.editors[currentLanguage].position, // TEST ... TODO: REMOVE
+    //             { lineNumber: 10, column: 10 },
+    //             "text-sm text-white px-1 absolute"
+    //         );
+    //         editor.addContentWidget(cursorWidgetRef.current);
+    //     }
 
-    }, [remoteProfile]);
+    //     cursorWidgetRef.current.getPosition = () => ({
+    //         // position: remoteProfile.editors[currentLanguage].position,
+    //         position: { lineNumber: 5, column: 10 },  // TEST ... TODO: REMOVE
+    //         preference: cursorWidgetRef.current!.preference,
+    //     });
+    //     editor.layoutContentWidget(cursorWidgetRef.current)
+    //     // if (current remote cursor position different than last one) {
+    //     cursorWidgetRef.current.show(10000);
+    //     // }
+    //     // }, [remoteProfile..??..position]);
+    // });
 
     // Load the runtime
     useEffect(() => {

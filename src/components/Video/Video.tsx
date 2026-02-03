@@ -1,5 +1,6 @@
 import React from "react";
 import { Camera, CameraOff, Mic, MicOff } from "lucide-react";
+import { ReactAnimal, type ReactAnimalNames } from "react-animals-ts";
 
 import type { Profile } from "@/lib/webrtc";
 
@@ -26,10 +27,13 @@ const LivestreamPlayer: React.FC<LivestreamPlayerProps> = (props) => {
 
     const nativeVideoProps = props as React.VideoHTMLAttributes<HTMLVideoElement>
 
+    const avatarAnimal = props.profile.username.split(' ')[1] as ReactAnimalNames
+
     return <div className={`relative max-h-[100%] w-full rounded bg-black/5 dark:bg-white/5 ${props.hidden ? "hidden" : ""}`}>
         {props.isLocalProfile ?
             <div className="absolute bottom-0 flex w-full px-4 z-10 dark:bg-black/25 bg-white/25 rounded-b">
-                <div className="flex-1 w-full flex items-center justify-start">
+                <div className="flex-1 w-full flex items-center justify-start gap-3">
+                    <span className="scale-90"><ReactAnimal name={avatarAnimal} size="sm" shape="circle" color="purple" /></span>
                     <p className="text-xl truncate whitespace-nowrap max-w-50">{props.profile.username}</p>
                 </div>
                 {props.withControls &&
@@ -41,7 +45,8 @@ const LivestreamPlayer: React.FC<LivestreamPlayerProps> = (props) => {
             </div>
             :
             <div className="absolute bottom-0 flex w-full px-4 z-10 bg-gray-500/50 rounded-b">
-                <div className="flex-1 w-full flex items-center justify-start text-gray-300">
+                <div className="flex-1 w-full flex items-center justify-start text-gray-300 gap-3">
+                    <span className="scale-90"><ReactAnimal name={avatarAnimal} size="sm" shape="circle" color="purple" /></span>
                     <p className="text-xl truncate whitespace-nowrap max-w-50">{props.profile.username}</p>
                 </div>
                 {props.withControls &&
