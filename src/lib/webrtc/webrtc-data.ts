@@ -10,6 +10,9 @@ export type Profile = {
     username: string;
     isCameraOn: boolean;
     isMicrophoneOn: boolean;
+    editors: {
+        [key: string]: { position: { lineNumber: number; column: number } };
+    };
 };
 
 export class WebRTCDataProvider {

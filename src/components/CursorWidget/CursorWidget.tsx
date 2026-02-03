@@ -1,5 +1,6 @@
 import ReactDOMServer from "react-dom/server";
 import { editor as monaco, type IPosition } from "monaco-editor";
+
 import { ReactAnimal, type ReactAnimalNames } from "@/components/ReactAnimal";
 
 export interface ICursorWidget extends monaco.IContentWidget {
@@ -14,7 +15,6 @@ export interface ICursorWidget extends monaco.IContentWidget {
 export default class CursorWidget implements monaco.IContentWidget {
     username: string;
     position: IPosition;
-    className: string;
     preference: monaco.ContentWidgetPositionPreference[] = [
         monaco.ContentWidgetPositionPreference.ABOVE,
         monaco.ContentWidgetPositionPreference.BELOW
@@ -25,9 +25,8 @@ export default class CursorWidget implements monaco.IContentWidget {
     constructor(username: string, position: IPosition, className: string, hidden: boolean = true) {
         this.username = username;
         this.position = position;
-        this.className = className;
         this.node = this.createNode();
-        this.node.className = this.className;
+        this.node.className = this.node.className + " " + className;
         this.node.style.pointerEvents = "none"; // important
         if (hidden) {
             this.hide();
@@ -37,14 +36,14 @@ export default class CursorWidget implements monaco.IContentWidget {
     private createNode(): HTMLElement {
         const node: HTMLElement = document.createElement("div");
         const avatarAnimal = this.username.split(' ')[1] as ReactAnimalNames
-        const tsx = <ReactAnimal name={avatarAnimal} size="sm" shape="circle" color="purple" />;
+        const tsx = <ReactAnimal name={avatarAnimal} size="sm" shape="circle" color="indigo" dance />
         const htmlString = ReactDOMServer.renderToString(tsx);
         node.innerHTML = htmlString;
         return node;
     }
 
     getId() {
-        return `user-cursor-${this.username}`
+        return `user-cursor-${this.username.replace(" ", "-")}`
     }
 
     getDomNode() {

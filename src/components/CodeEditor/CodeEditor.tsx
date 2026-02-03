@@ -18,7 +18,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner";
-// import CursorWidget from "../CursorWidget/CursorWidget";
+import CursorWidget from "../CursorWidget/CursorWidget";
 import { runtimeRegistry, type RuntimeEngine } from "@/lib/runtimes";
 import { useCollaboration } from "@/context/CollaborationContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -31,9 +31,8 @@ export default function CodeEditor() {
     const editorRef = useRef<monaco.IStandaloneCodeEditor | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
     const outputContainerRef = useRef<HTMLDivElement>(null);
-    // const cursorWidgetRef = useRef<CursorWidget | null>(null);
-    const { yDoc, currentLanguage, setCurrentLanguage,
-        /* remoteProfile, localProfile, updateLocalProfile */ } = useCollaboration();
+    const cursorWidgetRef = useRef<CursorWidget | null>(null);
+    const { yDoc, currentLanguage, setCurrentLanguage, remoteProfile, localProfile, updateLocalProfile } = useCollaboration();
     const { isDarkMode } = useTheme();
 
     const runtime = useMemo<RuntimeEngine>(() => runtimeRegistry[currentLanguage], [currentLanguage]);
@@ -78,9 +77,15 @@ export default function CodeEditor() {
         if (!model) return;
 
         // Update local profile when cursor position changes
-        // editor.onDidChangeCursorPosition((e) => {
-        //     updateLocalProfile({ editors: { ...localProfile.editors, [runtime.languageId]: e.position } });
-        // });
+        editor.onDidChangeCursorPosition((e) => {
+            updateLocalProfile({
+                editors: {
+                    ...localProfile.editors, [runtime.languageId]: {
+                        ...localProfile.editors[runtime.languageId], position: e.position
+                    }
+                }
+            });
+        });
 
         // Destroy old binding if it exists 
         // TODO: this does not seem to be needed since we have it on cleanup. remove soon if no need for it.
@@ -109,31 +114,27 @@ export default function CodeEditor() {
     }, [runtime]);
 
     // Respond to remote cursor position changes 
-    // useEffect(() => {
-    //     if (!editorRef.current) return;
-    //     const editor = editorRef.current;
+    // (e.g. show widget for remote cursor)
+    useEffect(() => {
+        if (!editorRef.current) return;
+        const editor = editorRef.current;
 
-    //     if (!cursorWidgetRef.current) {
-    //         cursorWidgetRef.current = new CursorWidget(
-    //             remoteProfile.username,
-    //             // remoteProfile.editors[currentLanguage].position, // TEST ... TODO: REMOVE
-    //             { lineNumber: 10, column: 10 },
-    //             "text-sm text-white px-1 absolute"
-    //         );
-    //         editor.addContentWidget(cursorWidgetRef.current);
-    //     }
+        if (!cursorWidgetRef.current) {
+            cursorWidgetRef.current = new CursorWidget(
+                remoteProfile.username,
+                remoteProfile.editors[currentLanguage].position,
+                ""
+            );
+            editor.addContentWidget(cursorWidgetRef.current);
+        }
 
-    //     cursorWidgetRef.current.getPosition = () => ({
-    //         // position: remoteProfile.editors[currentLanguage].position,
-    //         position: { lineNumber: 5, column: 10 },  // TEST ... TODO: REMOVE
-    //         preference: cursorWidgetRef.current!.preference,
-    //     });
-    //     editor.layoutContentWidget(cursorWidgetRef.current)
-    //     // if (current remote cursor position different than last one) {
-    //     cursorWidgetRef.current.show(10000);
-    //     // }
-    //     // }, [remoteProfile..??..position]);
-    // });
+        cursorWidgetRef.current.getPosition = () => ({
+            position: remoteProfile.editors[currentLanguage].position,
+            preference: cursorWidgetRef.current!.preference,
+        });
+        editor.layoutContentWidget(cursorWidgetRef.current)
+        cursorWidgetRef.current.show(1000); // hide after 1 second
+    }, [remoteProfile.editors[currentLanguage]?.position]);
 
     // Load the runtime
     useEffect(() => {

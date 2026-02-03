@@ -17,8 +17,7 @@ import { useTheme } from "@/context/ThemeContext"
 export default function Layout() {
     const { isDarkMode } = useTheme()
     const isRoomPage = useMatch("/rooms/*")
-    const isHomePage = useMatch("/")
-    const screenHeight = isHomePage ? "min-h-screen" : "h-screen"
+    const screenHeight = isRoomPage ? "h-screen" : "min-h-screen"
     const shouldShowHeader = !isRoomPage
     const shouldShowFooter = !isRoomPage
     const [sheetOpen, setSheetOpen] = useState(false)
