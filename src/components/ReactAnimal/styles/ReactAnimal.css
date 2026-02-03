@@ -1,0 +1,16 @@
+@import url("./animation.css");
+.v-animal-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.v-animal-image {
+  user-select: none;
+}
+
+.v-animal-dance {
+  -webkit-animation: v-a-dance 2s infinite;
+  -moz-animation: v-a-dance 2s infinite;
+  animation: v-a-dance 2s infinite;
+}

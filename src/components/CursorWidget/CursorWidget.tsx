@@ -1,6 +1,6 @@
 import ReactDOMServer from "react-dom/server";
 import { editor as monaco, type IPosition } from "monaco-editor";
-import { ReactAnimal, type ReactAnimalNames } from "react-animals-ts";
+import { ReactAnimal, type ReactAnimalNames } from "@/components/ReactAnimal";
 
 export interface ICursorWidget extends monaco.IContentWidget {
     username: string;
