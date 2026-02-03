@@ -4,6 +4,8 @@ import { ReactAnimal, type ReactAnimalNames } from "react-animals-ts";
 
 import type { Profile } from "@/lib/webrtc";
 
+import "./Video.css"
+
 interface LivestreamPlayerProps extends React.VideoHTMLAttributes<HTMLVideoElement> {
     withControls?: boolean,
     profile: Profile,
