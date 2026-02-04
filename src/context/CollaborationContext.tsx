@@ -20,8 +20,6 @@ interface CollaborationContextType {
     localProfile: Profile;
     remoteProfile: Profile;
     updateLocalProfile: (update: Partial<Profile>) => void;
-    currentLanguage: string;
-    setCurrentLanguage: (language: string) => void;
     isConnected: boolean;
     isSynced: boolean;
     connectDataChannel: (channel: RTCDataChannel) => void;
@@ -32,10 +30,9 @@ const CollaborationContext = createContext<CollaborationContextType | null>(null
 export function CollaborationProvider({ children }: { children: ReactNode }) {
     const [isConnected, setIsConnected] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
-    const [currentLanguage, setCurrentLanguage] = useState('python');
     const pathParams = useParams(); // check if id path variable exists (joining an existing room)
-    const [localProfile, setLocalProfile] = useState<Profile>({ username: generateUsername(), isCameraOn: false, isMicrophoneOn: false, isRoomCreator: !pathParams.id, editors: {} });
-    const [remoteProfile, setRemoteProfile] = useState<Profile>({ username: '', isCameraOn: false, isMicrophoneOn: false, isRoomCreator: false, editors: {} });
+    const [localProfile, setLocalProfile] = useState<Profile>(createInitialProfile(false, !pathParams.id));
+    const [remoteProfile, setRemoteProfile] = useState<Profile>(createInitialProfile(true));
 
     const yDocRef = useRef<Y.Doc>(new Y.Doc());
     const providerRef = useRef<WebRTCDataProvider | null>(null);
@@ -115,8 +112,6 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
                 localProfile,
                 remoteProfile,
                 updateLocalProfile,
-                currentLanguage,
-                setCurrentLanguage,
                 isConnected,
                 isSynced,
                 connectDataChannel,
@@ -133,4 +128,20 @@ export function useCollaboration() {
         throw new Error('useCollaboration must be used within a CollaborationProvider');
     }
     return context;
+}
+
+function createInitialProfile(isRemoteProfile?: boolean, isRoomCreator: boolean = false): Profile {
+    const initialEditors: any = {}
+    Object.keys(runtimeRegistry).forEach(languageId => {
+        initialEditors[languageId] = { position: { lineNumber: 1, column: 1 } }
+    })
+
+    return {
+        username: isRemoteProfile ? generateUsername() : '',
+        isCameraOn: false,
+        isMicrophoneOn: false,
+        isRoomCreator: isRoomCreator,
+        currentLanguage: 'python',
+        editors: initialEditors,
+    };
 }

@@ -31,11 +31,11 @@ export default function CodeEditor() {
     const editorRef = useRef<monaco.IStandaloneCodeEditor | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
     const outputContainerRef = useRef<HTMLDivElement>(null);
-    const cursorWidgetRef = useRef<CursorWidget | null>(null);
-    const { yDoc, currentLanguage, setCurrentLanguage, remoteProfile, localProfile, updateLocalProfile } = useCollaboration();
+    const cursorWidgetsRef = useRef<{ [key: string]: CursorWidget }>({});
+    const { yDoc, remoteProfile, localProfile, updateLocalProfile } = useCollaboration();
     const { isDarkMode } = useTheme();
 
-    const runtime = runtimeRegistry[currentLanguage];
+    const runtime = runtimeRegistry[localProfile.currentLanguage];
 
     function scrollOutputContainerToBottom() {
         if (outputContainerRef.current) {
@@ -43,6 +43,10 @@ export default function CodeEditor() {
             div.scrollTop = div.scrollHeight;
         }
     }
+
+    const handleSelectCurrentLanguage = (language: string) => {
+        updateLocalProfile({ currentLanguage: language });
+    };
 
     const handleIncreaseFontSize = () => {
         setFontSize((prevFontSize) => prevFontSize + 1);
@@ -87,13 +91,6 @@ export default function CodeEditor() {
             });
         });
 
-        // Destroy old binding if it exists 
-        // TODO: this does not seem to be needed since we have it on cleanup. remove soon if no need for it.
-        // if (bindingRef.current) {
-        //     bindingRef.current.destroy();
-        //     bindingRef.current = null;
-        // }
-
         // Rebind MonacoBinding when yText changes (language switch)
         bindingRef.current = new MonacoBinding(
             yDoc.getText(runtime.languageId),
@@ -113,28 +110,32 @@ export default function CodeEditor() {
         yText.delete(0, yText.toString().length);
     }, [runtime]);
 
-    // Respond to remote cursor position changes 
-    // (e.g. show widget for remote cursor)
+    // Respond to remote editor changes (e.g. cursor position)
+    // - displays widget for remote cursor
     useEffect(() => {
         if (!editorRef.current) return;
         const editor = editorRef.current;
 
-        if (!cursorWidgetRef.current) {
-            cursorWidgetRef.current = new CursorWidget(
-                remoteProfile.username,
-                remoteProfile.editors[currentLanguage].position,
-                ""
-            );
-            editor.addContentWidget(cursorWidgetRef.current);
+        if (remoteProfile.currentLanguage !== localProfile.currentLanguage) return;
+
+        // ensure cursor widget exists for current language
+        if (!(localProfile.currentLanguage in cursorWidgetsRef.current)) {
+            cursorWidgetsRef.current = {
+                [localProfile.currentLanguage]: new CursorWidget(
+                    remoteProfile.username,
+                    remoteProfile.editors[localProfile.currentLanguage].position,
+                    ""
+                ),
+            }
+            editor.addContentWidget(cursorWidgetsRef.current[localProfile.currentLanguage]);
         }
 
-        cursorWidgetRef.current.getPosition = () => ({
-            position: remoteProfile.editors[currentLanguage].position,
-            preference: cursorWidgetRef.current!.preference,
-        });
-        editor.layoutContentWidget(cursorWidgetRef.current)
-        cursorWidgetRef.current.show(1000); // hide after 1 second
-    }, [remoteProfile.editors[currentLanguage]?.position]);
+        // update cursor widget's position
+        const currentWidget = cursorWidgetsRef.current[localProfile.currentLanguage];
+        currentWidget.setPosition(remoteProfile.editors[localProfile.currentLanguage].position);
+        editor.layoutContentWidget(currentWidget);
+        currentWidget.show(1000); // hide after 1 second
+    }, [remoteProfile.editors]);
 
     // Load the runtime
     useEffect(() => {
@@ -186,7 +187,7 @@ export default function CodeEditor() {
             const yText = yDoc.getText(sharedOutputId);
 
             const handler = () => {
-                if (currentLanguage === languageId) {
+                if (localProfile.currentLanguage === languageId) {
                     setOutput(yText.toString())
                 }
             }
@@ -196,12 +197,12 @@ export default function CodeEditor() {
         });
 
         return () => observerRemovers.forEach(fn => { try { fn() } catch { } });
-    }, [currentLanguage]);
+    }, [localProfile.currentLanguage]);
 
     return (
         <div className="flex flex-col h-full gap-2">
             <div className="flex justify-between">
-                <Select value={currentLanguage} onValueChange={setCurrentLanguage}>
+                <Select value={localProfile.currentLanguage} onValueChange={handleSelectCurrentLanguage}>
                     <SelectTrigger size="sm" className="w-[140px] bg-white">
                         <SelectValue placeholder="Select language" />
                     </SelectTrigger>

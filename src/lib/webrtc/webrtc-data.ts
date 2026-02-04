@@ -11,6 +11,7 @@ export type Profile = {
     isCameraOn: boolean;
     isMicrophoneOn: boolean;
     isRoomCreator: boolean;
+    currentLanguage: string;
     editors: {
         [key: string]: { position: { lineNumber: number; column: number } };
     };

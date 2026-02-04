@@ -6,19 +6,21 @@ import { ReactAnimal, type ReactAnimalNames } from "@/components/ReactAnimal";
 export interface ICursorWidget extends monaco.IContentWidget {
     username: string;
     position: IPosition;
-    className: string;
     preference: monaco.ContentWidgetPositionPreference[];
+    setPosition(position: IPosition): void
     show(): void
     hide(): void
 }
 
-export default class CursorWidget implements monaco.IContentWidget {
+export default class CursorWidget implements ICursorWidget {
     username: string;
     position: IPosition;
     preference: monaco.ContentWidgetPositionPreference[] = [
         monaco.ContentWidgetPositionPreference.ABOVE,
         monaco.ContentWidgetPositionPreference.BELOW
     ];
+    allowEditorOverflow = false;
+    suppressMouseDown = true;
     private node: HTMLElement
     private hideTimeout?: NodeJS.Timeout;
 
@@ -55,6 +57,10 @@ export default class CursorWidget implements monaco.IContentWidget {
             position: this.position,
             preference: this.preference,
         };
+    }
+
+    setPosition(position: IPosition) {
+        this.position = position;
     }
 
     /**
