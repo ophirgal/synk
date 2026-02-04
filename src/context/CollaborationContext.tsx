@@ -33,9 +33,9 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     const [isConnected, setIsConnected] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
     const [currentLanguage, setCurrentLanguage] = useState('python');
-    const [localProfile, setLocalProfile] = useState<Profile>({ username: generateUsername(), isCameraOn: false, isMicrophoneOn: false, editors: {} });
-    const [remoteProfile, setRemoteProfile] = useState<Profile>({ username: '', isCameraOn: false, isMicrophoneOn: false, editors: {} });
     const pathParams = useParams(); // check if id path variable exists (joining an existing room)
+    const [localProfile, setLocalProfile] = useState<Profile>({ username: generateUsername(), isCameraOn: false, isMicrophoneOn: false, isRoomCreator: !pathParams.id, editors: {} });
+    const [remoteProfile, setRemoteProfile] = useState<Profile>({ username: '', isCameraOn: false, isMicrophoneOn: false, isRoomCreator: false, editors: {} });
 
     const yDocRef = useRef<Y.Doc>(new Y.Doc());
     const providerRef = useRef<WebRTCDataProvider | null>(null);
@@ -61,17 +61,19 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    /* Display default text for text editor
+    /* Display default text/code content for an editor
      * (if have not joined an existing room AND editor is empty)
+     * 
+     * @param yTextId - the ID of the Y.Text to be modified
+     * @param defaultContent - the default content to be displayed
      */
-    const initDefaultEditorContent = useCallback((yTextId: string, defaultContent: string) => {
-        const isJoinedExisitingRoom = !!pathParams.id
+    const initDefaultEditorContent = (yTextId: string, defaultContent: string) => {
         const yText = yDocRef.current.getText(yTextId);
         const isEditorEmpty = yText.toString().length === 0;
-        if (!isJoinedExisitingRoom && isEditorEmpty) {
+        if (localProfile.isRoomCreator && isEditorEmpty) {
             yText.insert(0, defaultContent);
         }
-    }, [pathParams]);
+    };
 
     // Initialize [used to be: init runtime engines] and the WebRTC provider (meant to run only once.)
     useEffect(() => {
@@ -86,9 +88,11 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
             setIsSynced(false);
         };
 
-        // Display default text for text editor
-        // (if have not joined an existing room AND editor is empty)
+        // Display default text for all editors (text editor and all programming language editors)
         initDefaultEditorContent(textEditorTextId, textEditorDefaultText);
+        Object.keys(runtimeRegistry).forEach(languageId => {
+            initDefaultEditorContent(languageId, runtimeRegistry[languageId].defaultCode);
+        });
 
         return () => {
             providerRef.current?.destroy();
@@ -103,13 +107,6 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         // alert("sending local profile update: " + JSON.stringify(localProfile))
         providerRef.current.sendProfileUpdate(localProfile);
     }, [localProfile]);
-
-    // Display default code for current language
-    // (if have not joined an existing room AND editor is empty)
-    useEffect(() => {
-        const runtime = runtimeRegistry[currentLanguage];
-        initDefaultEditorContent(currentLanguage, runtime.defaultCode);
-    }, [currentLanguage]);
 
     return (
         <CollaborationContext.Provider

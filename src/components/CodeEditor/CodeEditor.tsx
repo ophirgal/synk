@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import MonacoEditor from "@monaco-editor/react";
 import { editor as monaco } from "monaco-editor";
 import { MonacoBinding } from "y-monaco";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner";
 import CursorWidget from "../CursorWidget/CursorWidget";
-import { runtimeRegistry, type RuntimeEngine } from "@/lib/runtimes";
+import { runtimeRegistry } from "@/lib/runtimes";
 import { useCollaboration } from "@/context/CollaborationContext";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -35,7 +35,7 @@ export default function CodeEditor() {
     const { yDoc, currentLanguage, setCurrentLanguage, remoteProfile, localProfile, updateLocalProfile } = useCollaboration();
     const { isDarkMode } = useTheme();
 
-    const runtime = useMemo<RuntimeEngine>(() => runtimeRegistry[currentLanguage], [currentLanguage]);
+    const runtime = runtimeRegistry[currentLanguage];
 
     function scrollOutputContainerToBottom() {
         if (outputContainerRef.current) {

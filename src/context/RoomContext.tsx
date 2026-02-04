@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode, useMemo } from "react"
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
 import { toast } from "sonner"
 
 interface RoomContextType {
@@ -13,7 +13,7 @@ const RoomContext = createContext<RoomContextType | null>(null)
 export function RoomProvider({ children }: { children: ReactNode }) {
     const [currentRoomId, setCurrentRoomId] = useState<string | null>(null)
 
-    const roomLink = useMemo<string>(() => currentRoomId ? createRoomLink(currentRoomId) : "", [currentRoomId])
+    const roomLink = currentRoomId ? createRoomLink(currentRoomId) : ""
 
     const copyRoomLink = useCallback((roomId?: string) => {
         const linkToCopy = roomId ? createRoomLink(roomId) : roomLink

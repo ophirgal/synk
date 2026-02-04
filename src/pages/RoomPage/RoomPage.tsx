@@ -186,11 +186,11 @@ function RoomContent() {
     const handleCameraToggle = useCallback(async () => {
         await toggleLocalCamera(!localProfile.isCameraOn)
         updateLocalProfile({ isCameraOn: !localProfile.isCameraOn })
-    }, [localProfile])
+    }, [localProfile.isCameraOn])
     const handleMicToggle = useCallback(() => {
         toggleLocalMic(!localProfile.isMicrophoneOn)
         updateLocalProfile({ isMicrophoneOn: !localProfile.isMicrophoneOn })
-    }, [localProfile])
+    }, [localProfile.isMicrophoneOn])
 
     // Initialize the Room
     useEffect(() => {

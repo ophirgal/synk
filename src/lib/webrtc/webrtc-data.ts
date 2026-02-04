@@ -10,6 +10,7 @@ export type Profile = {
     username: string;
     isCameraOn: boolean;
     isMicrophoneOn: boolean;
+    isRoomCreator: boolean;
     editors: {
         [key: string]: { position: { lineNumber: number; column: number } };
     };
