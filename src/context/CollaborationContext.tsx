@@ -31,8 +31,8 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     const [isConnected, setIsConnected] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
     const pathParams = useParams(); // check if id path variable exists (joining an existing room)
-    const [localProfile, setLocalProfile] = useState<Profile>(createInitialProfile(false, !pathParams.id));
-    const [remoteProfile, setRemoteProfile] = useState<Profile>(createInitialProfile(true));
+    const [localProfile, setLocalProfile] = useState<Profile>(createInitialProfile(generateUsername(), !pathParams.id));
+    const [remoteProfile, setRemoteProfile] = useState<Profile>(createInitialProfile());
 
     const yDocRef = useRef<Y.Doc>(new Y.Doc());
     const providerRef = useRef<WebRTCDataProvider | null>(null);
@@ -130,18 +130,24 @@ export function useCollaboration() {
     return context;
 }
 
-function createInitialProfile(isRemoteProfile?: boolean, isRoomCreator: boolean = false): Profile {
+function createInitialProfile(
+    username: string = '',
+    isRoomCreator: boolean = false,
+    isCameraOn: boolean = false,
+    isMicrophoneOn: boolean = false,
+    currentLanguage: string = 'python'
+): Profile {
     const initialEditors: any = {}
     Object.keys(runtimeRegistry).forEach(languageId => {
         initialEditors[languageId] = { position: { lineNumber: 1, column: 1 } }
     })
 
     return {
-        username: isRemoteProfile ? generateUsername() : '',
-        isCameraOn: false,
-        isMicrophoneOn: false,
-        isRoomCreator: isRoomCreator,
-        currentLanguage: 'python',
+        username,
+        isCameraOn,
+        isMicrophoneOn,
+        isRoomCreator,
+        currentLanguage,
         editors: initialEditors,
     };
 }
