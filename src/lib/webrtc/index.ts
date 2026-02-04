@@ -1,4 +1,4 @@
-export { WebRTCDataProvider, type Profile } from './webrtc-data';
+export { WebRTCDataProvider, type Profile, type Editors } from './webrtc-data';
 export {
     ensureLocalStream,
     ensureRemoteStream,

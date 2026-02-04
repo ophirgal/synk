@@ -76,7 +76,7 @@ function RoomContent() {
                     toast.success(`A Peer has successfully joined the room: ${room.id}`);
                 },
                 (channel) => {
-                    console.log('[Room] Data channel ready (creator)');
+                    // console.log('[DEBUG]: data channel ready (creator)');
                     connectDataChannel(channel);
                 }
             );
@@ -146,7 +146,7 @@ function RoomContent() {
                     toast.success(`Successfully joined room: ${room.id.slice(0, 6)}...`);
                 },
                 (channel) => {
-                    console.log('[Room] Data channel ready (joiner)');
+                    // console.log('[DEBUG]: data channel ready (joiner)');
                     connectDataChannel(channel);
                 }
             );

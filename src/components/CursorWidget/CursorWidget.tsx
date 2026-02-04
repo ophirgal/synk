@@ -5,6 +5,7 @@ import { ReactAnimal, type ReactAnimalNames } from "@/components/ReactAnimal";
 
 export interface ICursorWidget extends monaco.IContentWidget {
     username: string;
+    id: string
     position: IPosition;
     preference: monaco.ContentWidgetPositionPreference[];
     setPosition(position: IPosition): void
@@ -14,6 +15,7 @@ export interface ICursorWidget extends monaco.IContentWidget {
 
 export default class CursorWidget implements ICursorWidget {
     username: string;
+    id: string;
     position: IPosition;
     preference: monaco.ContentWidgetPositionPreference[] = [
         monaco.ContentWidgetPositionPreference.ABOVE,
@@ -26,6 +28,7 @@ export default class CursorWidget implements ICursorWidget {
 
     constructor(username: string, position: IPosition, className: string, hidden: boolean = true) {
         this.username = username;
+        this.id = this.generateId();
         this.position = position;
         this.node = this.createNode();
         this.node.className = this.node.className + " " + className;
@@ -33,6 +36,10 @@ export default class CursorWidget implements ICursorWidget {
         if (hidden) {
             this.hide();
         }
+    }
+
+    private generateId() {
+        return `user-cursor-${this.username.replace(" ", "-")}-${Math.random().toString(36).slice(2)}`;
     }
 
     private createNode(): HTMLElement {
@@ -45,7 +52,7 @@ export default class CursorWidget implements ICursorWidget {
     }
 
     getId() {
-        return `user-cursor-${this.username.replace(" ", "-")}`
+        return this.id
     }
 
     getDomNode() {

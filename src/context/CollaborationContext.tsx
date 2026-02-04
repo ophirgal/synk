@@ -2,7 +2,6 @@ import {
     createContext,
     useContext,
     useState,
-    useCallback,
     useEffect,
     useRef,
     type ReactNode
@@ -10,7 +9,7 @@ import {
 import { useParams } from 'react-router';
 import * as Y from 'yjs';
 
-import { WebRTCDataProvider, type Profile } from '@/lib/webrtc';
+import { WebRTCDataProvider, type Profile, type Editors } from '@/lib/webrtc';
 import { runtimeRegistry } from '@/lib/runtimes';
 import { generateUsername } from '@/lib/utils';
 import { textEditorDefaultText, textEditorTextId } from '@/constants/constants';
@@ -19,7 +18,7 @@ interface CollaborationContextType {
     yDoc: Y.Doc;
     localProfile: Profile;
     remoteProfile: Profile;
-    updateLocalProfile: (update: Partial<Profile>) => void;
+    updateLocalProfile: (update: Partial<Profile> | ((prev: Profile) => Profile)) => void;
     isConnected: boolean;
     isSynced: boolean;
     connectDataChannel: (channel: RTCDataChannel) => void;
@@ -45,11 +44,14 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         setRemoteProfile(_ => ({ ...profile })); // important: force an update by creating a new object
     }
 
-    const updateLocalProfile = useCallback((update: Partial<Profile>) => {
-        const updatedProfile = { ...localProfile, ...update }; // important: force an update by creating a new object
-        // alert("updating local profile: " + JSON.stringify(updatedProfile))
-        setLocalProfile(updatedProfile);
-    }, [localProfile]);
+    const updateLocalProfile = (update: Partial<Profile> | ((prev: Profile) => Profile)) => {
+        setLocalProfile(prev => {
+            if (typeof update === 'function') {
+                return update(prev);
+            }
+            return { ...prev, ...update };
+        });
+    };
 
     const connectDataChannel = (channel: RTCDataChannel) => {
         if (providerRef.current) {
@@ -135,9 +137,10 @@ function createInitialProfile(
     isRoomCreator: boolean = false,
     isCameraOn: boolean = false,
     isMicrophoneOn: boolean = false,
-    currentLanguage: string = 'python'
+    currentLanguage: string = 'python',
+    activeEditor?: string
 ): Profile {
-    const initialEditors: any = {}
+    const initialEditors: Editors = { [textEditorTextId]: { position: { lineNumber: 1, column: 1 } } }
     Object.keys(runtimeRegistry).forEach(languageId => {
         initialEditors[languageId] = { position: { lineNumber: 1, column: 1 } }
     })
@@ -148,6 +151,7 @@ function createInitialProfile(
         isMicrophoneOn,
         isRoomCreator,
         currentLanguage,
+        activeEditor,
         editors: initialEditors,
     };
 }

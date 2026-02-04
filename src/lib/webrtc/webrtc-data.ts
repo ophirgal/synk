@@ -6,15 +6,18 @@ type SyncMessage =
     | { type: 'yjs-update'; data: number[] }
     | { type: 'profile-update'; data: string };
 
+export type Editors = {
+    [key: string]: { position: { lineNumber: number; column: number } }
+};
+
 export type Profile = {
     username: string;
     isCameraOn: boolean;
     isMicrophoneOn: boolean;
     isRoomCreator: boolean;
     currentLanguage: string;
-    editors: {
-        [key: string]: { position: { lineNumber: number; column: number } };
-    };
+    activeEditor?: string;
+    editors: Editors;
 };
 
 export class WebRTCDataProvider {

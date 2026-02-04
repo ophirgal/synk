@@ -5,10 +5,11 @@ import { MonacoBinding } from "y-monaco";
 import { AArrowUp, AArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner";
-// import CursorWidget from "../CursorWidget";
+import CursorWidget from "../CursorWidget/CursorWidget";
 import { useCollaboration } from "@/context/CollaborationContext";
 import { useTheme } from "@/context/ThemeContext";
 import { textEditorTextId } from "@/constants/constants";
+import type { Profile } from "@/lib/webrtc";
 
 
 export default function TextEditor() {
@@ -16,8 +17,8 @@ export default function TextEditor() {
     const [isEditorReady, setIsEditorReady] = useState(false);
     const editorRef = useRef<monaco.IStandaloneCodeEditor | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
-    // const cursorWidgetRef = useRef<CursorWidget | null>(null);
-    const { yDoc, remoteProfile /*, localProfile, updateLocalProfile */ } = useCollaboration();
+    const cursorWidgetRef = useRef<CursorWidget | null>(null);
+    const { yDoc, remoteProfile, localProfile, updateLocalProfile } = useCollaboration();
     const { isDarkMode } = useTheme();
 
     const handleIncreaseFontSize = () => {
@@ -36,12 +37,18 @@ export default function TextEditor() {
         if (!model) return;
 
         // Update local profile when cursor position changes
-        // editor.onDidChangeCursorPosition((e) => {
-        //     updateLocalProfile({ editors: { ...localProfile.editors, [textEditorTextId]: e.position } });
-        // });
-
-        // Destroy old binding if it exists
-        bindingRef.current?.destroy();
+        editor.onDidChangeCursorPosition((e) => {
+            if (localProfile.activeEditor === textEditorTextId) return;
+            updateLocalProfile((profile: Profile) => ({
+                ...profile,
+                activeEditor: textEditorTextId,
+                editors: {
+                    ...profile.editors, [textEditorTextId]: {
+                        ...profile.editors[textEditorTextId], position: e.position
+                    }
+                }
+            }));
+        });
 
         // Rebind MonacoBinding when yText changes (language switch)
         bindingRef.current = new MonacoBinding(
@@ -58,30 +65,30 @@ export default function TextEditor() {
         };
     };
 
-    // Respond to remote cursor position changes 
+    // Respond to remote editor changes (e.g. cursor position)
+    // - displays widget for remote cursor
     useEffect(() => {
-        // if (!editorRef.current) return;
-        // const editor = editorRef.current;
+        if (!editorRef.current) return;
+        const editor = editorRef.current;
 
-        // if (!cursorWidgetRef.current) {
-        //     cursorWidgetRef.current = new CursorWidget(
-        //         remoteProfile.username,
-        //         remoteProfile.editors[currentLanguage].position,
-        //         "bg-indigo-400 text-sm text-white px-1 absolute"
-        //     );
-        //     editor.addContentWidget(cursorWidgetRef.current);
-        // }
-        // 
-        // cursorWidgetRef.current.getPosition = () => ({
-        //     position: remoteProfile.editors[currentLanguage].position,
-        //     preference: cursorWidgetRef.current!.preference,
-        // });
-        // editor.layoutContentWidget(cursorWidgetRef.current)
-        // if (current remote cursor position different than last one) {
-        //     cursorWidgetRef.current.show(1000);
-        // }
+        if (remoteProfile.activeEditor !== textEditorTextId) return;
 
-    }, [remoteProfile]);
+        // ensure cursor widget exists for current language
+        if (!cursorWidgetRef.current) {
+            cursorWidgetRef.current = new CursorWidget(
+                remoteProfile.username,
+                remoteProfile.editors[textEditorTextId].position,
+                ""
+            )
+            editor.addContentWidget(cursorWidgetRef.current);
+        }
+
+        // update cursor widget's position
+        const currentWidget = cursorWidgetRef.current;
+        currentWidget.setPosition(remoteProfile.editors[textEditorTextId].position);
+        editor.layoutContentWidget(currentWidget);
+        currentWidget.show(1000); // hide after 1 second
+    }, [remoteProfile.editors]);
 
     return (
         <div className="flex flex-col h-full gap-2">

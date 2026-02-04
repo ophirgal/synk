@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import MonacoEditor from "@monaco-editor/react";
-import { editor as monaco } from "monaco-editor";
+import { editor as monaco, type IPosition } from "monaco-editor";
 import { MonacoBinding } from "y-monaco";
 import { AArrowDown, AArrowUp, GripHorizontal, Play, Trash2 } from "lucide-react";
 
@@ -22,6 +22,7 @@ import CursorWidget from "../CursorWidget/CursorWidget";
 import { runtimeRegistry } from "@/lib/runtimes";
 import { useCollaboration } from "@/context/CollaborationContext";
 import { useTheme } from "@/context/ThemeContext";
+import type { Profile } from "@/lib/webrtc";
 
 
 export default function CodeEditor() {
@@ -32,6 +33,7 @@ export default function CodeEditor() {
     const bindingRef = useRef<MonacoBinding | null>(null);
     const outputContainerRef = useRef<HTMLDivElement>(null);
     const cursorWidgetsRef = useRef<{ [key: string]: CursorWidget }>({});
+    const lastRemoteCursorPosRef = useRef<IPosition | null>(null);
     const { yDoc, remoteProfile, localProfile, updateLocalProfile } = useCollaboration();
     const { isDarkMode } = useTheme();
 
@@ -82,13 +84,15 @@ export default function CodeEditor() {
 
         // Update local profile when cursor position changes
         editor.onDidChangeCursorPosition((e) => {
-            updateLocalProfile({
+            updateLocalProfile((profile: Profile) => ({
+                ...profile,
+                activeEditor: profile.currentLanguage,
                 editors: {
-                    ...localProfile.editors, [runtime.languageId]: {
-                        ...localProfile.editors[runtime.languageId], position: e.position
+                    ...profile.editors, [profile.currentLanguage]: {
+                        ...profile.editors[profile.currentLanguage], position: e.position
                     }
                 }
-            });
+            } as Profile));
         });
 
         // Rebind MonacoBinding when yText changes (language switch)
@@ -112,11 +116,18 @@ export default function CodeEditor() {
 
     // Respond to remote editor changes (e.g. cursor position)
     // - displays widget for remote cursor
+    // Bear in mind -- you are trying to listen to nested changes in remoteProfile,
+    // but in reality you are listening to any and all updates to the remoteProfile.
     useEffect(() => {
         if (!editorRef.current) return;
         const editor = editorRef.current;
 
-        if (remoteProfile.currentLanguage !== localProfile.currentLanguage) return;
+        if (remoteProfile.activeEditor !== localProfile.currentLanguage) return;
+
+        const newPos = remoteProfile.editors[localProfile.currentLanguage].position;
+        const lastPos = lastRemoteCursorPosRef.current;
+        if (lastPos && lastPos.lineNumber === newPos.lineNumber && lastPos.column === newPos.column) return;
+        lastRemoteCursorPosRef.current = newPos;
 
         // ensure cursor widget exists for current language
         if (!(localProfile.currentLanguage in cursorWidgetsRef.current)) {
@@ -234,7 +245,8 @@ export default function CodeEditor() {
                     </Button>
                 </div>
             </div>
-            <div className="h-full" key={runtime?.id}>
+            {/* important: we set the key below to force the editor to re-mount on programming language selection */}
+            <div className="h-full" key={runtime.languageId}>
                 <ResizablePanelGroup className="panels h-full" orientation="vertical">
                     <ResizablePanel className="border" defaultSize={65}>
                         <MonacoEditor

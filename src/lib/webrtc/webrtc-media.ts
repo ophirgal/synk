@@ -523,7 +523,7 @@ const createAnswerForRoom = async (
     // Listen for data channel from creator (joiner side)
     peerConnection.ondatachannel = (event) => {
         dataChannel = event.channel;
-        console.log('[WebRTC] Data channel received (joiner)');
+        // console.log('[DEBUG]: WebRTC data channel received (joiner)');
 
         dataChannel.onopen = () => {
             // handle data channel opened (joiner side);
