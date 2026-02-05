@@ -42,7 +42,7 @@ export default function Layout() {
     return (
         <div className={`flex flex-col ${screenHeight} w-screen bg-gradient-to-br dafrom-blue-50 to-indigo-100 dark:from-black dark:to-indigo-800`}>
             {shouldShowHeader &&
-                <header className="flex items-center justify-between px-4 sm:px-8 h-[60px] sm:h-[75px]">
+                <header className="flex items-center justify-between px-4 sm:px-8 h-[60px] sm:h-[75px] 2xl:px-50">
                     <Link to="/" className="text-3xl sm:text-5xl font-bold no-underline text-indigo-500 hover:text-indigo-400 dark:text-indigo-400 dark:hover:text-indigo-300 active:text-indigo-600 transition-colors select-none">[synk]</Link>
 
                     <nav className="hidden sm:flex justify-end gap-3 sm:gap-6 text-sm sm:text-base">

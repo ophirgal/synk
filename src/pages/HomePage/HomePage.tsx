@@ -106,11 +106,11 @@ export default function HomePage() {
             <section className="flex items-center justify-center min-h-[calc(100vh-140px)]">
                 <div className="max-w-4xl mx-auto p-8 sm:py-16 text-center">
                     <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 dark:text-gray-100">
-                        No Signup. <br className="sm:hidden" />No Friction.<br />
-                        Pure Productivity.
+                        Experience the future of collaborative coding.
                     </h1>
                     <p className="text-3xl sm:text-xl md:text-2xl text-gray-700 dark:text-gray-100 mb-6 sm:mb-8 leading-relaxed">
-                        Experience the future of collaborative coding with <span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span>.
+                        No Signup. <br className="sm:hidden" />No Friction.<br />
+                        Just Pure Productivity.
                     </p>
                     <p className="text-xl sm:text-lg text-gray-600 dark:text-gray-100 mb-6 sm:mb-8 max-w-2xl mx-auto">
                         The revolutionary platform that combines real-time code collaboration with live video and audio.
