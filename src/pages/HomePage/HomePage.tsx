@@ -17,8 +17,8 @@ const pricingTiers = [
             "Code editor with syntax highlighting",
             "Live video & audio",
             "Shared text editor",
+            "Shared code execution",
             "Room creation via link",
-            "JavaScript & Python execution",
         ],
         cta: "[synk] Up!",
         ctaHref: "/rooms",
@@ -109,10 +109,10 @@ export default function HomePage() {
                         No Signup. <br className="sm:hidden" />No Friction.<br />
                         Pure Productivity.
                     </h1>
-                    <p className="text-lg sm:text-xl md:text-2xl text-gray-700 dark:text-gray-100 mb-6 sm:mb-8 leading-relaxed">
+                    <p className="text-3xl sm:text-xl md:text-2xl text-gray-700 dark:text-gray-100 mb-6 sm:mb-8 leading-relaxed">
                         Experience the future of collaborative coding with <span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span>.
                     </p>
-                    <p className="text-base sm:text-lg text-gray-600 dark:text-gray-100 mb-6 sm:mb-8 max-w-2xl mx-auto">
+                    <p className="text-xl sm:text-lg text-gray-600 dark:text-gray-100 mb-6 sm:mb-8 max-w-2xl mx-auto">
                         The revolutionary platform that combines real-time code collaboration with live video and audio.
                         Have seamless 1-on-1 experiences, see changes instantly, and communicate naturally—all in one place.
                         No more switching between tools.
@@ -161,7 +161,7 @@ export default function HomePage() {
                                         </span>
                                     )}
                                 </div>
-                                <p className={`text-sm mb-6 ${tier.highlighted ? "text-indigo-100" : "text-gray-600 dark:text-gray-400"
+                                <p className={`mb-6 ${tier.highlighted ? "text-indigo-100" : "text-gray-600 dark:text-gray-400"
                                     }`}>
                                     {tier.description}
                                 </p>
@@ -170,7 +170,7 @@ export default function HomePage() {
                                         <li key={feature} className="flex items-start gap-2">
                                             <Check className={`h-5 w-5 shrink-0 mt-0.5 ${tier.highlighted ? "text-indigo-200" : "text-indigo-500 dark:text-indigo-400"
                                                 }`} />
-                                            <span className={`text-sm ${tier.highlighted ? "text-indigo-50" : "text-gray-700 dark:text-gray-300"
+                                            <span className={`${tier.highlighted ? "text-indigo-50" : "text-gray-700 dark:text-gray-300"
                                                 }`}>
                                                 {feature}
                                             </span>
@@ -207,7 +207,7 @@ export default function HomePage() {
                                 <AccordionTrigger className="text-base text-gray-900 dark:text-gray-100 hover:no-underline">
                                     {item.question}
                                 </AccordionTrigger>
-                                <AccordionContent className="text-gray-600 dark:text-gray-300">
+                                <AccordionContent className="text-base  text-gray-600 dark:text-gray-300">
                                     {item.answer}
                                 </AccordionContent>
                             </AccordionItem>
