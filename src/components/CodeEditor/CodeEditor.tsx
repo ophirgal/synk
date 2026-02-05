@@ -122,7 +122,14 @@ export default function CodeEditor() {
         if (!editorRef.current) return;
         const editor = editorRef.current;
 
-        if (remoteProfile.activeEditor !== localProfile.currentLanguage) return;
+        // Ensure current language matches remote.
+        // ---
+        // used to be -- if (remoteProfile.activeEditor !== localProfile.currentLanguage) return;
+        // left as a comment for future reference in case we want to revert.
+        if (remoteProfile.currentLanguage !== localProfile.currentLanguage) {
+            updateLocalProfile({ currentLanguage: remoteProfile.currentLanguage });
+            return;
+        }
 
         const newPos = remoteProfile.editors[localProfile.currentLanguage].position;
         const lastPos = lastRemoteCursorPosRef.current;
