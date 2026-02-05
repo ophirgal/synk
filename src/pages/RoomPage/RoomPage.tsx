@@ -7,6 +7,7 @@ import {
     navLinks,
     localVideoElementId,
     remoteVideoElementId,
+    smallScreenWidth,
 } from "@/constants/constants"
 import {
     ensureLocalStream,
@@ -41,10 +42,11 @@ import type { Room } from "@/services/DatabaseService"
 import { RoomProvider, useRoom } from "@/context/RoomContext"
 import { CollaborationProvider, useCollaboration } from "@/context/CollaborationContext"
 import { useTheme } from "@/context/ThemeContext"
-
-import avatarPlaceholder from "@/assets/avatar-placeholder.svg"
 import TextEditor from "@/components/TextEditor/TextEditor"
 import { Spinner } from "@/components/ui/spinner"
+import useWindowSize from "@/hooks/useWindowSize"
+
+import avatarPlaceholder from "@/assets/avatar-placeholder.svg"
 
 
 function RoomContent() {
@@ -217,7 +219,7 @@ function RoomContent() {
     }, [isPeerJoined, remoteProfile.isCameraOn, remoteProfile.isMicrophoneOn])
 
     return (
-        <>
+        <div className="hidden sm:flex flex-col border-t h-full">
             <nav className="flex border-b h-[50px] justify-between items-center px-4">
                 <a href="/" className="text-3xl font-bold no-underline text-indigo-500 hover:text-indigo-400 dark:text-indigo-400 dark:hover:text-indigo-300 active:text-indigo-600 transition-colors select-none">[synk]</a>
                 <div className="flex items-center gap-2 max-w-[50%]">
@@ -303,21 +305,23 @@ function RoomContent() {
                     </div>
                 </ResizablePanel>
             </ResizablePanelGroup >
-        </>
+        </div>
     )
 }
 
 export default function RoomPage() {
+    const { width } = useWindowSize()
     return (
         <CollaborationProvider>
             <RoomProvider>
-                <div className="hidden sm:flex flex-col border-t h-full">
+                {width >= smallScreenWidth ?
                     <RoomContent />
-                </div>
-                <div className="sm:hidden flex justify-center items-center text-3xl p-5 h-full">
-                    <p><span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span> is designed for medium to large screens!
-                        <br />Switch to a larger screen to <span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span> up!</p>
-                </div>
+                    :
+                    <div className="sm:hidden flex justify-center items-center text-3xl p-5 h-full">
+                        <p><span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span> is designed for medium to large screens!
+                            <br />Switch to a larger screen to <span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span> up!</p>
+                    </div>
+                }
             </RoomProvider>
         </CollaborationProvider>
     );
