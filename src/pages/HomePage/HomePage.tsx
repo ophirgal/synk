@@ -109,7 +109,7 @@ export default function HomePage() {
                         Experience the future of collaborative coding.
                     </h1>
                     <p className="text-3xl sm:text-xl md:text-2xl text-gray-700 dark:text-gray-100 mb-6 sm:mb-8 leading-relaxed">
-                        No Signup. <br className="sm:hidden" />No Friction.<br />
+                        No Signup. No Friction.<br />
                         Just Pure Productivity.
                     </p>
                     <p className="text-xl sm:text-lg text-gray-600 dark:text-gray-100 mb-6 sm:mb-8 max-w-2xl mx-auto">
