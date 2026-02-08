@@ -1,9 +1,5 @@
 export default function PageNotFound() {
-    return (
-        // <div className="">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 dark:text-gray-100">
-                Page Not Found :/
-            </h1>
-        // </div>
-    )
+    return <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 dark:text-gray-100">
+        Page Not Found :/
+    </h1>
 }

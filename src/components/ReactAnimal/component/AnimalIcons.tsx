@@ -80,7 +80,7 @@ export type ReactAnimalNames =
 
 // const animalImages = require.context('./images', false, /\.png$/);
 const getImage = (filename: string) => {
-  return new URL(`animal-avatars/${filename}`, window.origin).href
+  return new URL(`assets/animal-avatars/${filename}`, window.origin).href
 };
 
 // const getImage = (path: string) => {
