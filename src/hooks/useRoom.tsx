@@ -11,11 +11,13 @@ interface RoomContext {
 }
 
 function createRoomLink(roomId: string, currentLanguage?: string): string {
-    const searchParams = new URLSearchParams();
+    let queryString = "";
     if (currentLanguage) {
+        const searchParams = new URLSearchParams();
         searchParams.set(CURRENT_LANGUAGE_SEARCH_PARAM, currentLanguage)
+        queryString = `?${searchParams.toString()}`
     }
-    const queryString = searchParams.size > 0 ? `?${searchParams.toString()}` : ""
+
     return `${window.location.origin}/rooms/${roomId}${queryString}`
 }
 

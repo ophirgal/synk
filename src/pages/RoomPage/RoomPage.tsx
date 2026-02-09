@@ -48,6 +48,22 @@ import useWindowSize from "@/hooks/useWindowSize"
 
 import avatarPlaceholder from "@/assets/avatar-placeholder.svg"
 
+export default function RoomPage() {
+    const { width } = useWindowSize()
+
+    return (
+        <CollaborationProvider>
+            {width >= smallScreenWidth ?
+                <RoomContent />
+                :
+                <div className="sm:hidden flex justify-center items-center text-3xl p-5 h-full">
+                    <p><span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span> is designed for medium to large screens!
+                        <br />Switch to a larger screen to <span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span> up!</p>
+                </div>
+            }
+        </CollaborationProvider>
+    );
+}
 
 function RoomContent() {
     const [isPeerJoined, setIsPeerJoined] = useState(false);
@@ -57,7 +73,7 @@ function RoomContent() {
     const pathParams = useParams(); // get id path variable from the router!
     const { roomLink, setCurrentRoomId, copyRoomLink } = useRoom();
     const { connectDataChannel, localProfile, remoteProfile, updateLocalProfile } = useCollaboration();
-    const { isDarkMode, setIsDarkMode, direction, setDirection } = useTheme();
+    const { direction } = useTheme();
 
 
     const createRoom = async () => {
@@ -181,10 +197,6 @@ function RoomContent() {
         }
     }
 
-    const handleCopyRoomLink = () => copyRoomLink()
-    const handleNewRoom = () => window.open('/rooms', '_blank')
-    const handleToggleDirection = () => setDirection(direction === 'ltr' ? 'rtl' : 'ltr')
-    const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode)
     const handleCameraToggle = useCallback(async () => {
         await toggleLocalCamera(!localProfile.isCameraOn)
         updateLocalProfile({ isCameraOn: !localProfile.isCameraOn })
@@ -220,69 +232,11 @@ function RoomContent() {
 
     return (
         <div className="hidden sm:flex flex-col border-t h-full">
-            <nav className="flex border-b h-[50px] justify-between items-center px-4">
-                <a href="/" className="text-3xl font-bold no-underline text-indigo-500 hover:text-indigo-400 dark:text-indigo-400 dark:hover:text-indigo-300 active:text-indigo-600 transition-colors select-none">[synk]</a>
-                <div className="flex items-center gap-2 max-w-[50%]">
-                    {roomLink ?
-                        <div id="room-link" className="text-sm flex items-center gap-2 w-full">
-                            <p className="text-muted-foreground dark:text-gray-100 whitespace-nowrap"><strong>Room:</strong></p>
-                            <a
-                                href={roomLink}
-                                className="underline text-blue-600 hover:text-blue-800 truncate whitespace-nowrap select-all"
-                            >
-                                {roomLink}
-                            </a>
-                            <div>
-                                <Copy className="cursor-pointer hover:text-gray-500 active:text-black h-4 w-4" onClick={handleCopyRoomLink} />
-                            </div>
-                        </div>
-                        :
-                        <div className="text-sm flex items-center gap-2 text-muted-foreground dark:text-gray-100 whitespace-nowrap">
-                            <Spinner data-icon="inline-start" />
-                            <strong>{pathParams.id ? 'Joining Room...' : 'Creating Room...'}</strong>
-                        </div>
-                    }
-                </div>
-                <div className="flex gap-2">
-                    <Button onClick={handleToggleDirection} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
-                        {direction === 'rtl' ? <ArrowLeftRight strokeWidth={3} /> : <ArrowRightLeft strokeWidth={3} />}
-                    </Button>
-                    <Button onClick={handleToggleDarkMode} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
-                        {isDarkMode ? <Moon strokeWidth={3} /> : <Sun strokeWidth={3} />}
-                    </Button>
-                    <Button onClick={handleNewRoom} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
-                        <Plus strokeWidth={3} />New Room
-                    </Button>
-                    <Sheet>
-                        <SheetTrigger asChild>
-                            <Menu className="cursor-pointer rounded text-indigo-500 hover:text-indigo-400 h-8 w-8 ml-2" />
-                        </SheetTrigger>
-                        <SheetContent side="right" className="w-[250px]">
-                            <SheetHeader>
-                                <SheetTitle></SheetTitle>
-                                <SheetDescription></SheetDescription>
-                            </SheetHeader>
-                            <nav className="flex flex-col gap-8 mt-6">
-                                {navLinks.map((link) => (
-                                    <a
-                                        key={link.label}
-                                        href={link.href}
-                                        className="text-3xl text-indigo-500 hover:text-indigo-400 active:text-indigo-600 transition-colors"
-                                    >
-                                        {link.label}
-                                    </a>
-                                ))}
-                            </nav>
-                        </SheetContent>
-                    </Sheet>
-                </div>
-            </nav >
+            <RoomNavBar roomLink={roomLink} onCopyRoomLink={copyRoomLink} />
             <ResizablePanelGroup className="h-full" orientation="horizontal" dir={direction}>
                 {/* Text Editor Panel */}
                 <ResizablePanel collapsible className="h-full p-4" dir="ltr" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
-                    {/* <div className="dark:bg-indigo-950 bg-indigo-100 p-4 h-full text-left" style={{ whiteSpace: "pre-line" }}> */}
                     <TextEditor />
-                    {/* </div> */}
                 </ResizablePanel>
                 <ResizableHandle withHandle />
                 {/* Code Editor Panel */}
@@ -309,18 +263,70 @@ function RoomContent() {
     )
 }
 
-export default function RoomPage() {
-    const { width } = useWindowSize()
-    return (
-        <CollaborationProvider>
-            {width >= smallScreenWidth ?
-                <RoomContent />
+function RoomNavBar({ onCopyRoomLink, roomLink }: { onCopyRoomLink: () => void, roomLink: string }) {
+    const { isDarkMode, setIsDarkMode, direction, setDirection } = useTheme();
+    const pathParams = useParams(); // get id path variable from the router!
+
+    const handleCopyRoomLink = () => onCopyRoomLink()
+    const handleNewRoom = () => window.open('/rooms', '_blank')
+    const handleToggleDirection = () => setDirection(direction === 'ltr' ? 'rtl' : 'ltr')
+    const handleToggleDarkMode = () => setIsDarkMode(!isDarkMode)
+
+    return <nav className="flex border-b h-[50px] justify-between items-center px-4">
+        <a href="/" className="text-3xl font-bold no-underline text-indigo-500 hover:text-indigo-400 dark:text-indigo-400 dark:hover:text-indigo-300 active:text-indigo-600 transition-colors select-none">[synk]</a>
+        <div className="flex items-center gap-2 max-w-[50%]">
+            {roomLink ?
+                <div id="room-link" className="text-sm flex items-center gap-2 w-full">
+                    <p className="text-muted-foreground dark:text-gray-100 whitespace-nowrap"><strong>Room:</strong></p>
+                    <a
+                        href={roomLink}
+                        className="underline text-blue-600 hover:text-blue-800 truncate whitespace-nowrap select-all"
+                    >
+                        {roomLink}
+                    </a>
+                    <div>
+                        <Copy className="cursor-pointer hover:text-gray-500 active:text-black h-4 w-4" onClick={handleCopyRoomLink} />
+                    </div>
+                </div>
                 :
-                <div className="sm:hidden flex justify-center items-center text-3xl p-5 h-full">
-                    <p><span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span> is designed for medium to large screens!
-                        <br />Switch to a larger screen to <span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span> up!</p>
+                <div className="text-sm flex items-center gap-2 text-muted-foreground dark:text-gray-100 whitespace-nowrap">
+                    <Spinner data-icon="inline-start" />
+                    <strong>{pathParams.id ? 'Joining Room...' : 'Creating Room...'}</strong>
                 </div>
             }
-        </CollaborationProvider>
-    );
+        </div>
+        <div className="flex gap-2">
+            <Button onClick={handleToggleDirection} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                {direction === 'rtl' ? <ArrowLeftRight strokeWidth={3} /> : <ArrowRightLeft strokeWidth={3} />}
+            </Button>
+            <Button onClick={handleToggleDarkMode} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                {isDarkMode ? <Moon strokeWidth={3} /> : <Sun strokeWidth={3} />}
+            </Button>
+            <Button onClick={handleNewRoom} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
+                <Plus strokeWidth={3} />New Room
+            </Button>
+            <Sheet>
+                <SheetTrigger asChild>
+                    <Menu className="cursor-pointer rounded text-indigo-500 hover:text-indigo-400 h-8 w-8 ml-2" />
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[250px]">
+                    <SheetHeader>
+                        <SheetTitle></SheetTitle>
+                        <SheetDescription></SheetDescription>
+                    </SheetHeader>
+                    <nav className="flex flex-col gap-8 mt-6">
+                        {navLinks.map((link) => (
+                            <a
+                                key={link.label}
+                                href={link.href}
+                                className="text-3xl text-indigo-500 hover:text-indigo-400 active:text-indigo-600 transition-colors"
+                            >
+                                {link.label}
+                            </a>
+                        ))}
+                    </nav>
+                </SheetContent>
+            </Sheet>
+        </div>
+    </nav >
 }
