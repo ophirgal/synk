@@ -39,7 +39,7 @@ import LivestreamPlayer from "@/components/LivestreamPlayer/LivestreamPlayer"
 import { Button } from "@/components/ui/button"
 import { databaseService } from "@/services/FirebaseDatabaseService"
 import type { Room } from "@/services/DatabaseService"
-import { RoomProvider, useRoom } from "@/context/RoomContext"
+import { useRoom } from "@/hooks/useRoom"
 import { CollaborationProvider, useCollaboration } from "@/context/CollaborationContext"
 import { useTheme } from "@/context/ThemeContext"
 import TextEditor from "@/components/TextEditor/TextEditor"
@@ -313,16 +313,14 @@ export default function RoomPage() {
     const { width } = useWindowSize()
     return (
         <CollaborationProvider>
-            <RoomProvider>
-                {width >= smallScreenWidth ?
-                    <RoomContent />
-                    :
-                    <div className="sm:hidden flex justify-center items-center text-3xl p-5 h-full">
-                        <p><span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span> is designed for medium to large screens!
-                            <br />Switch to a larger screen to <span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span> up!</p>
-                    </div>
-                }
-            </RoomProvider>
+            {width >= smallScreenWidth ?
+                <RoomContent />
+                :
+                <div className="sm:hidden flex justify-center items-center text-3xl p-5 h-full">
+                    <p><span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span> is designed for medium to large screens!
+                        <br />Switch to a larger screen to <span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span> up!</p>
+                </div>
+            }
         </CollaborationProvider>
     );
 }

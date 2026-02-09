@@ -6,13 +6,13 @@ import {
     useRef,
     type ReactNode
 } from 'react';
-import { useParams } from 'react-router';
+import { useParams, useSearchParams } from 'react-router';
 import * as Y from 'yjs';
 
 import { WebRTCDataProvider, type Profile, type Editors } from '@/lib/webrtc';
 import { runtimeRegistry } from '@/lib/runtimes';
 import { generateUsername } from '@/lib/utils';
-import { textEditorDefaultText, textEditorTextId } from '@/constants/constants';
+import { CURRENT_LANGUAGE_SEARCH_PARAM, textEditorDefaultText, textEditorTextId } from '@/constants/constants';
 
 interface CollaborationContextType {
     yDoc: Y.Doc;
@@ -29,8 +29,8 @@ const CollaborationContext = createContext<CollaborationContextType | null>(null
 export function CollaborationProvider({ children }: { children: ReactNode }) {
     const [isConnected, setIsConnected] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
-    const pathParams = useParams(); // check if id path variable exists (joining an existing room)
-    const [localProfile, setLocalProfile] = useState<Profile>(createInitialProfile(generateUsername(), !pathParams.id));
+    const [_, setSearchParams] = useSearchParams();
+    const [localProfile, setLocalProfile] = useState<Profile>(createInitialProfile(generateUsername()));
     const [remoteProfile, setRemoteProfile] = useState<Profile>(createInitialProfile());
 
     const yDocRef = useRef<Y.Doc>(new Y.Doc());
@@ -105,6 +105,7 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         if (!providerRef.current) return;
         // alert("sending local profile update: " + JSON.stringify(localProfile))
         providerRef.current.sendProfileUpdate(localProfile);
+        setSearchParams(params => ({ ...params, [CURRENT_LANGUAGE_SEARCH_PARAM]: localProfile.currentLanguage }), { replace: true });
     }, [localProfile]);
 
     return (
@@ -134,16 +135,23 @@ export function useCollaboration() {
 
 function createInitialProfile(
     username: string = '',
-    isRoomCreator: boolean = false,
+    currentLanguage: string = 'python',
+    activeEditor?: string,
     isCameraOn: boolean = false,
     isMicrophoneOn: boolean = false,
-    currentLanguage: string = 'python',
-    activeEditor?: string
 ): Profile {
     const initialEditors: Editors = { [textEditorTextId]: { position: { lineNumber: 1, column: 1 } } }
     Object.keys(runtimeRegistry).forEach(languageId => {
         initialEditors[languageId] = { position: { lineNumber: 1, column: 1 } }
     })
+
+    const pathParams = useParams(); // check if id path variable exists (joining an existing room)
+    const [searchParams, _] = useSearchParams();
+
+    const isRoomCreator = !pathParams.id
+    if (!isRoomCreator) {
+        currentLanguage = searchParams.get(CURRENT_LANGUAGE_SEARCH_PARAM) ?? currentLanguage;
+    }
 
     return {
         username,

@@ -16,6 +16,8 @@ const animalNames = ['alligator', 'anteater', 'armadillo', 'auroch', 'axolotl', 
 
 const smallScreenWidth = 640
 
+const CURRENT_LANGUAGE_SEARCH_PARAM = 'currentLanguage'
+
 export {
     navLinks,
     localVideoElementId,
@@ -25,4 +27,5 @@ export {
     textEditorDefaultText,
     animalNames,
     smallScreenWidth,
+    CURRENT_LANGUAGE_SEARCH_PARAM,
 }
