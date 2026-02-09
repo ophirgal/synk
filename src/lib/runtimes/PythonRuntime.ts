@@ -61,7 +61,7 @@ print(formatted_time)`;
                         write(s: string) {
                             outputHandler?.(s);
                         }
-                        flush() {}
+                        flush() { }
                     }
 
                     pyodide.globals.get("sys").stdout = pyodide.toPy(new StdoutWriter());

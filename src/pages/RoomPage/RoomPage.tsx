@@ -35,7 +35,7 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet"
 import CodeEditor from "@/components/CodeEditor/CodeEditor"
-import LivestreamPlayer from "@/components/Video/Video"
+import LivestreamPlayer from "@/components/LivestreamPlayer/LivestreamPlayer"
 import { Button } from "@/components/ui/button"
 import { databaseService } from "@/services/FirebaseDatabaseService"
 import type { Room } from "@/services/DatabaseService"

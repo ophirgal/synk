@@ -66,12 +66,14 @@ export default function CodeEditor() {
         }
 
         try {
+            setIsReadyToRun(false)
             const code = editorRef.current?.getValue() || "";
             await runtime.runCode(code);
         } catch (err) {
             const sharedOutputId = `${runtime.languageId}-output`;
             const yText = yDoc.getText(sharedOutputId);
             yText.insert(yText.toString().length, (err as Error).toString());
+            setIsReadyToRun(true)
         }
     }, [runtime]);
 
@@ -166,18 +168,19 @@ export default function CodeEditor() {
 
         const loadRuntime = async () => {
             try {
+                setIsReadyToRun(false);
                 await runtime.load((newOutput) => {
                     if (!disposed) {
                         yText.insert(yText.toString().length, newOutput);
+                        setIsReadyToRun(true);
                     }
                 });
-                if (!disposed) {
-                    setIsReadyToRun(true);
-                }
             } catch (err) {
                 if (!disposed) {
                     setOutput(`Failed to load runtime: ${(err as Error).message}`);
                 }
+            } finally {
+                setIsReadyToRun(true);
             }
         };
 
@@ -246,7 +249,7 @@ export default function CodeEditor() {
                             :
                             <>
                                 <Spinner data-icon="inline-start" />
-                                Loading...
+                                Run
                             </>
                         }
                     </Button>
