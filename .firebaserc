@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "synklive"
+    "prod": "synklive",
+    "dev": "synklive-dev"
   }
 }
