@@ -1,9 +1,16 @@
-import { localVideoElementId, remoteAudioElementId, remoteVideoElementId } from "@/constants/constants";
+import { LOCAL_VIDEO_ELEMENT_ID } from "@/constants/constants";
+import { getRemoteVideoElementId, getRemoteAudioElementId } from "@/lib/utils";
 
-let peerConnection: RTCPeerConnection | null = null;
+type Connection = {
+    peerConnection: RTCPeerConnection,
+    remoteStream?: MediaStream;
+    dataChannel?: RTCDataChannel;
+}
+
+let connections: {
+    [key: string]: Connection
+} = {};
 let localStream: MediaStream | null = null;
-let remoteStream: MediaStream | null = null;
-let dataChannel: RTCDataChannel | null = null;
 
 const servers: RTCConfiguration = {
     iceServers: [
@@ -376,6 +383,14 @@ const servers: RTCConfiguration = {
     ]
 };
 
+const RTCPeerConnectionState = {
+    CLOSED: "closed",
+    CONNECTED: "connected",
+    CONNECTING: "connecting",
+    DISCONNECTED: "disconnected",
+    FAILED: "failed",
+    NEW: "new",
+} as const;
 
 /**
  * Ensures a local media stream is available and updates its enabled media types as specified.
@@ -394,7 +409,7 @@ const ensureLocalStream = async (cameraOn: boolean = false, microphoneOn: boolea
         localStream.getAudioTracks().forEach(track => track.enabled = microphoneOn)
         localStream.getVideoTracks().forEach(track => track.enabled = cameraOn)
     }
-    const localVideo = document.getElementById(localVideoElementId) as HTMLVideoElement
+    const localVideo = document.getElementById(LOCAL_VIDEO_ELEMENT_ID) as HTMLVideoElement
     if (localVideo && cameraOn) localVideo.srcObject = localStream
 };
 
@@ -402,8 +417,10 @@ const ensureLocalStream = async (cameraOn: boolean = false, microphoneOn: boolea
  * Ensures a remote media stream is available.
  * If the remote stream does not exist, it is initialized.
  */
-const ensureRemoteStream = () => {
-    if (!remoteStream) remoteStream = new MediaStream()
+const ensureRemoteStream = (connectionId: string) => {
+    connections[connectionId] = connections[connectionId] || {}
+    const conn = connections[connectionId]
+    if (!conn.remoteStream) conn.remoteStream = new MediaStream()
 };
 
 const toggleLocalCamera = async (cameraOn: boolean = true): Promise<void> => {
@@ -417,7 +434,7 @@ const toggleLocalCamera = async (cameraOn: boolean = true): Promise<void> => {
         track.enabled = cameraOn;
     });
     // inflate or nullify video source (nullifying displays poster)
-    const localVideo = document.getElementById(localVideoElementId) as HTMLVideoElement
+    const localVideo = document.getElementById(LOCAL_VIDEO_ELEMENT_ID) as HTMLVideoElement
     if (!localVideo) return;
     localVideo.srcObject = cameraOn ? localStream : null
 };
@@ -432,23 +449,25 @@ const toggleLocalMic = async (microphoneOn: boolean = true): Promise<void> => {
     });
 };
 
-const toggleRemoteVideoAndAudioSources = async (isVideoSrc: boolean = true, isMicSrc: boolean = true): Promise<void> => {
-    ensureRemoteStream();
+const toggleRemoteVideoAndAudioSources = (connectionId: string, isVideoSrc: boolean = true, isMicSrc: boolean = true): void => {
+    ensureRemoteStream(connectionId);
+    let remoteStream = connections[connectionId].remoteStream!
 
     // inflate or nullify video source so as to display poster when needed
-    const remoteVideoEl = document.getElementById(remoteVideoElementId) as HTMLVideoElement
+    const remoteVideoEl = document.getElementById(getRemoteVideoElementId(connectionId)) as HTMLVideoElement
     if (!remoteVideoEl) return;
     remoteVideoEl.srcObject = isVideoSrc ? remoteStream : null
 
     // nullify or inflate audio source (keeps remote audio playing when video is disabled)
     // -- only inflate audio source when video source is nullified
-    const remoteAudioEl = getOrCreateAudioElement()
+    const remoteAudioEl = getOrCreateAudioElement(connectionId)
     remoteAudioEl.srcObject = (isMicSrc && !remoteVideoEl.srcObject) ? remoteStream : null
 }
 
 // Ensures hidden audio element exists; 
 // serves as fallback player for remote audio when nullifying video element's stream.
-function getOrCreateAudioElement() {
+function getOrCreateAudioElement(connectionId: string): HTMLAudioElement {
+    const remoteAudioElementId = getRemoteAudioElementId(connectionId)
     let remoteAudioEl = document.getElementById(remoteAudioElementId) as HTMLAudioElement
     if (!remoteAudioEl) {
         remoteAudioEl = document.createElement('audio');
@@ -460,126 +479,139 @@ function getOrCreateAudioElement() {
     return remoteAudioEl;
 }
 
-const createOfferForRoom = async (
+const createOfferForConnection = async (
+    connectionId: string,
     onIceCandidate: (candidate: RTCIceCandidateInit) => void,
     onConnectionConnected: () => void,
     onDataChannelReady: (channel: RTCDataChannel) => void
 ): Promise<RTCSessionDescriptionInit> => {
-    peerConnection = new RTCPeerConnection(servers);
+    const conn: Connection = { peerConnection: new RTCPeerConnection(servers) };
+    connections[connectionId] = conn;
 
     // Create data channel BEFORE creating offer (creator side)
-    dataChannel = peerConnection.createDataChannel('yjs-sync', {
+    conn.dataChannel = conn.peerConnection.createDataChannel('yjs-sync', {
         ordered: true,
     });
 
-    dataChannel.onopen = () => {
+    conn.dataChannel.onopen = () => {
         // handle data channel opened (creator side);
-        onDataChannelReady(dataChannel!);
+        onDataChannelReady(conn.dataChannel!);
     };
 
     localStream?.getTracks().forEach(track => {
-        peerConnection?.addTrack(track, localStream!);
+        conn.peerConnection.addTrack(track, localStream!);
     });
 
-    peerConnection.ontrack = (event: RTCTrackEvent) => {
-        toggleRemoteVideoAndAudioSources();
+    conn.peerConnection.ontrack = (event: RTCTrackEvent) => {
+        toggleRemoteVideoAndAudioSources(connectionId);
 
         event.streams.forEach(stream => {
             stream.getTracks().forEach(track => {
-                remoteStream?.addTrack(track);
+                connections[connectionId].remoteStream?.addTrack(track);
             });
         });
     };
 
-    peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+    conn.peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
         if (event.candidate) {
             onIceCandidate(event.candidate.toJSON());
         }
     };
 
-    peerConnection.onconnectionstatechange = () => {
-        if (peerConnection?.connectionState === 'connected') {
+    conn.peerConnection.onconnectionstatechange = () => {
+        if (conn.peerConnection.connectionState === RTCPeerConnectionState.CONNECTED) {
             onConnectionConnected();
+        }
+        if (conn.peerConnection.connectionState === RTCPeerConnectionState.FAILED) {
+            delete connections[connectionId];
         }
     }
 
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
+    const offer = await conn.peerConnection.createOffer();
+    await conn.peerConnection.setLocalDescription(offer);
 
     return offer;
 };
 
-const createAnswerForRoom = async (
+const createAnswerForConnection = async (
+    connectionId: string,
     offer: RTCSessionDescriptionInit,
     onIceCandidate: (candidate: RTCIceCandidateInit) => void,
     onConnectionConnected: () => void,
     onDataChannelReady: (channel: RTCDataChannel) => void
 ): Promise<RTCSessionDescriptionInit> => {
-    if (peerConnection) { // connection was created, return local description as answer
-        return peerConnection.localDescription!;
+    if (connections[connectionId]?.peerConnection) { // connection was created, return local description as answer
+        return connections[connectionId].peerConnection.localDescription!;
     }
-    peerConnection = new RTCPeerConnection(servers);
+    const conn: Connection = { peerConnection: new RTCPeerConnection(servers) };
+    connections[connectionId] = conn;
 
     // Listen for data channel from creator (joiner side)
-    peerConnection.ondatachannel = (event) => {
-        dataChannel = event.channel;
+    conn.peerConnection.ondatachannel = (event) => {
+        conn.dataChannel = event.channel;
         // console.log('[DEBUG]: WebRTC data channel received (joiner)');
 
-        dataChannel.onopen = () => {
+        conn.dataChannel.onopen = () => {
             // handle data channel opened (joiner side);
-            onDataChannelReady(dataChannel!);
+            onDataChannelReady(connections[connectionId].dataChannel!);
         };
     };
 
     localStream?.getTracks().forEach(track => {
-        peerConnection?.addTrack(track, localStream!);
+        conn.peerConnection.addTrack(track, localStream!);
     });
 
-    ensureRemoteStream();
+    ensureRemoteStream(connectionId);
 
-    peerConnection.ontrack = (event: RTCTrackEvent) => {
+    conn.peerConnection.ontrack = (event: RTCTrackEvent) => {
         event.streams[0].getTracks().forEach(track => {
-            remoteStream?.addTrack(track);
+            connections[connectionId].remoteStream!.addTrack(track);
         });
     };
 
-    peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+    conn.peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
         if (event.candidate) {
             onIceCandidate(event.candidate.toJSON());
         }
     };
 
-    peerConnection.onconnectionstatechange = () => {
-        if (peerConnection?.connectionState === 'connected') {
+    conn.peerConnection.onconnectionstatechange = () => {
+        if (conn.peerConnection.connectionState === RTCPeerConnectionState.CONNECTED) {
             onConnectionConnected();
+        }
+        if (conn.peerConnection.connectionState === RTCPeerConnectionState.FAILED) {
+            delete connections[connectionId];
         }
     }
 
-    await peerConnection.setRemoteDescription(offer);
+    await conn.peerConnection.setRemoteDescription(offer);
 
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
+    const answer = await conn.peerConnection.createAnswer();
+    await conn.peerConnection.setLocalDescription(answer);
 
     return answer;
 };
 
-const isRemoteDescriptionSet = (): boolean => {
-    return !!peerConnection?.currentRemoteDescription;
+const isRemoteDescriptionSet = (connectionId: string): boolean => {
+    return !!connections[connectionId]?.peerConnection.currentRemoteDescription;
 };
 
-const setRemoteAnswer = async (answer: RTCSessionDescriptionInit): Promise<void> => {
-    if (peerConnection && !peerConnection.currentRemoteDescription) {
-        await peerConnection.setRemoteDescription(answer);
+
+const setRemoteAnswer = async (connectionId: string, answer: RTCSessionDescriptionInit): Promise<void> => {
+    const conn = connections[connectionId];
+    if (conn && conn.peerConnection && !conn.peerConnection.currentRemoteDescription) {
+        await conn.peerConnection.setRemoteDescription(answer);
     }
 };
 
-const addRemoteIceCandidate = async (candidate: RTCIceCandidateInit): Promise<void> => {
-    if (peerConnection) {
-        await peerConnection.addIceCandidate(candidate);
+const addRemoteIceCandidate = async (connectionId: string, candidate: RTCIceCandidateInit): Promise<void> => {
+    const conn = connections[connectionId];
+    if (conn && conn.peerConnection) {
+        await conn.peerConnection.addIceCandidate(candidate);
     }
 };
 
-const getPeerConnection = () => peerConnection;
+const getConnections = () => connections;
 
 export {
     ensureLocalStream,
@@ -587,10 +619,10 @@ export {
     toggleLocalCamera,
     toggleLocalMic,
     toggleRemoteVideoAndAudioSources,
-    createOfferForRoom,
-    createAnswerForRoom,
+    createOfferForConnection,
+    createAnswerForConnection,
     isRemoteDescriptionSet,
     setRemoteAnswer,
     addRemoteIceCandidate,
-    getPeerConnection,
+    getConnections,
 };

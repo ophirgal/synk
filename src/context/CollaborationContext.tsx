@@ -11,8 +11,8 @@ import * as Y from 'yjs';
 
 import { WebRTCDataProvider, type Profile, type Editors } from '@/lib/webrtc';
 import { runtimeRegistry } from '@/lib/runtimes';
-import { generateUsername } from '@/lib/utils';
-import { CURRENT_LANGUAGE_SEARCH_PARAM, textEditorDefaultText, textEditorTextId } from '@/constants/constants';
+import { generateAvatarAndDisplayName } from '@/lib/utils';
+import { CURRENT_LANGUAGE_SEARCH_PARAM, TEXT_EDITOR_DEFAULT_TEXT, TEXT_EDITOR_YTEXT_ID } from '@/constants/constants';
 
 interface CollaborationContextType {
     yDoc: Y.Doc;
@@ -30,7 +30,8 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     const [isConnected, setIsConnected] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
     const [_, setSearchParams] = useSearchParams();
-    const [localProfile, setLocalProfile] = useState<Profile>(createInitialProfile(generateUsername()));
+    const [avatar, displayName] = generateAvatarAndDisplayName()
+    const [localProfile, setLocalProfile] = useState<Profile>(createInitialProfile(avatar, displayName));
     const [remoteProfile, setRemoteProfile] = useState<Profile>(createInitialProfile());
 
     const yDocRef = useRef<Y.Doc>(new Y.Doc());
@@ -88,7 +89,7 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
         };
 
         // Display default text for all editors (text editor and all programming language editors)
-        initDefaultEditorContent(textEditorTextId, textEditorDefaultText);
+        initDefaultEditorContent(TEXT_EDITOR_YTEXT_ID, TEXT_EDITOR_DEFAULT_TEXT);
         Object.keys(runtimeRegistry).forEach(languageId => {
             initDefaultEditorContent(languageId, runtimeRegistry[languageId].defaultCode);
         });
@@ -134,13 +135,14 @@ export function useCollaboration() {
 }
 
 function createInitialProfile(
-    username: string = '',
+    avatar: string = '',
+    displayName: string = '',
     currentLanguage: string = 'python',
     activeEditor?: string,
     isCameraOn: boolean = false,
     isMicrophoneOn: boolean = false,
 ): Profile {
-    const initialEditors: Editors = { [textEditorTextId]: { position: { lineNumber: 1, column: 1 } } }
+    const initialEditors: Editors = { [TEXT_EDITOR_YTEXT_ID]: { position: { lineNumber: 1, column: 1 } } }
     Object.keys(runtimeRegistry).forEach(languageId => {
         initialEditors[languageId] = { position: { lineNumber: 1, column: 1 } }
     })
@@ -154,7 +156,8 @@ function createInitialProfile(
     }
 
     return {
-        username,
+        avatar,
+        displayName,
         isCameraOn,
         isMicrophoneOn,
         isRoomCreator,

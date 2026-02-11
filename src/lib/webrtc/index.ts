@@ -5,10 +5,10 @@ export {
     toggleLocalCamera,
     toggleLocalMic,
     toggleRemoteVideoAndAudioSources,
-    createOfferForRoom,
-    createAnswerForRoom,
+    createOfferForConnection,
+    createAnswerForConnection,
     isRemoteDescriptionSet,
     setRemoteAnswer,
     addRemoteIceCandidate,
-    getPeerConnection,
+    getConnections
 } from './webrtc-media';

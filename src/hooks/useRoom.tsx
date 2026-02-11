@@ -7,7 +7,7 @@ interface RoomContext {
     currentRoomId: string | null
     setCurrentRoomId: (id: string | null) => void
     roomLink: string
-    copyRoomLink: (roomId?: string) => void
+    copyRoomLink: (roomId?: string, currentLanguage?: string) => void
 }
 
 function createRoomLink(roomId: string, currentLanguage?: string): string {

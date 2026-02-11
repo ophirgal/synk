@@ -11,7 +11,8 @@ export type Editors = {
 };
 
 export type Profile = {
-    username: string;
+    displayName: string;
+    avatar: string;
     isCameraOn: boolean;
     isMicrophoneOn: boolean;
     isRoomCreator: boolean;

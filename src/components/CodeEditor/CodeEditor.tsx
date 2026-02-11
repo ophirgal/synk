@@ -142,7 +142,7 @@ export default function CodeEditor() {
         if (!(localProfile.currentLanguage in cursorWidgetsRef.current)) {
             cursorWidgetsRef.current = {
                 [localProfile.currentLanguage]: new CursorWidget(
-                    remoteProfile.username,
+                    remoteProfile.displayName,
                     remoteProfile.editors[localProfile.currentLanguage].position,
                     ""
                 ),

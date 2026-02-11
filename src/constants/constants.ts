@@ -1,3 +1,5 @@
+import { animalImageMap } from "@/components/ReactAnimal/component/AnimalIcons"
+
 const navLinks = [
     { href: "/", label: "Home" },
     { href: "/#pricing", label: "Pricing" },
@@ -5,27 +7,23 @@ const navLinks = [
     { href: "/#contact", label: "Contact" },
 ]
 
-const localVideoElementId = "local-video"
-const remoteVideoElementId = "remote-video"
-const remoteAudioElementId = "remote-audio"
+const LOCAL_VIDEO_ELEMENT_ID = "local-video"
 
-const textEditorTextId = "text-editor"
-const textEditorDefaultText = "Free text goes here... [synk] away!"
+const TEXT_EDITOR_YTEXT_ID = "text-editor"
+const TEXT_EDITOR_DEFAULT_TEXT = "Free text goes here... [synk] away!"
 
-const animalNames = ['alligator', 'anteater', 'armadillo', 'auroch', 'axolotl', 'badger', 'bat', 'beaver', 'buffalo', 'camel', 'capybara', 'chameleon', 'cheetah', 'chinchilla', 'chipmunk', 'chupacabra', 'cormorant', 'coyote', 'crow', 'dingo', 'dinosaur', 'dolphin', 'duck', 'elephant', 'ferret', 'fox', 'frog', 'giraffe', 'gopher', 'grizzly', 'hedgehog', 'hippo', 'hyena', 'ibex', 'ifrit', 'iguana', 'jackal', 'kangaroo', 'koala', 'kraken', 'lemur', 'leopard', 'liger', 'llama', 'manatee', 'mink', 'monkey', 'moose', 'narwhal', 'orangutan', 'otter', 'panda', 'penguin', 'platypus', 'pumpkin', 'python', 'quagga', 'rabbit', 'raccoon', 'rhino', 'sheep', 'shrew', 'skunk', 'squirrel', 'tiger', 'turtle', 'walrus', 'wolf', 'wolverine', 'wombat']
+const ANIMAL_NAMES = Object.keys(animalImageMap)
 
-const smallScreenWidth = 640
+const SMALL_SCREEN_WIDTH = 640
 
 const CURRENT_LANGUAGE_SEARCH_PARAM = 'currentLanguage'
 
 export {
     navLinks,
-    localVideoElementId,
-    remoteVideoElementId,
-    remoteAudioElementId,
-    textEditorTextId,
-    textEditorDefaultText,
-    animalNames,
-    smallScreenWidth,
+    LOCAL_VIDEO_ELEMENT_ID,
+    TEXT_EDITOR_YTEXT_ID,
+    TEXT_EDITOR_DEFAULT_TEXT,
+    ANIMAL_NAMES,
+    SMALL_SCREEN_WIDTH,
     CURRENT_LANGUAGE_SEARCH_PARAM,
 }

@@ -27,14 +27,14 @@ const LivestreamPlayer: React.FC<LivestreamPlayerProps> = (props) => {
 
     const nativeVideoProps = props as React.VideoHTMLAttributes<HTMLVideoElement>
 
-    const avatarAnimal = props.profile.username.split(' ')[1] as ReactAnimalNames
+    const avatarAnimal = props.profile.displayName.split(' ')[1] as ReactAnimalNames
 
     return <div className={`relative max-h-[100%] w-full rounded bg-black/5 dark:bg-white/5 ${props.hidden ? "hidden" : ""}`}>
         {props.isLocalProfile ?
             <div className="absolute bottom-0 flex w-full px-4 z-10 dark:bg-black/25 bg-white/25 rounded-b">
                 <div className="flex items-center justify-start gap-3 truncate">
                     <span className="scale-90"><ReactAnimal name={avatarAnimal} size="sm" shape="circle" color="indigo" /></span>
-                    <p className="text-xl truncate whitespace-nowrap max-w-50">{props.profile.username}</p>
+                    <p className="text-xl truncate whitespace-nowrap max-w-50">{props.profile.displayName}</p>
                 </div>
                 {props.withControls &&
                     <div className="flex-1 flex justify-end">
@@ -47,7 +47,7 @@ const LivestreamPlayer: React.FC<LivestreamPlayerProps> = (props) => {
             <div className="absolute bottom-0 flex w-full px-4 z-10 bg-gray-500/50 rounded-b">
                 <div className="flex items-center justify-start gap-3 truncate text-gray-300">
                     <span className="scale-90"><ReactAnimal name={avatarAnimal} size="sm" shape="circle" color="indigo" /></span>
-                    <p className="text-xl truncate whitespace-nowrap max-w-50">{props.profile.username}</p>
+                    <p className="text-xl truncate whitespace-nowrap max-w-50">{props.profile.displayName}</p>
                 </div>
                 {props.withControls &&
                     <div className="flex-1 flex justify-end">

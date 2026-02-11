@@ -8,7 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import CursorWidget from "../CursorWidget/CursorWidget";
 import { useCollaboration } from "@/context/CollaborationContext";
 import { useTheme } from "@/context/ThemeContext";
-import { textEditorTextId } from "@/constants/constants";
+import { TEXT_EDITOR_YTEXT_ID } from "@/constants/constants";
 import type { Profile } from "@/lib/webrtc";
 
 
@@ -38,13 +38,13 @@ export default function TextEditor() {
 
         // Update local profile when cursor position changes
         editor.onDidChangeCursorPosition((e) => {
-            if (localProfile.activeEditor === textEditorTextId) return;
+            if (localProfile.activeEditor === TEXT_EDITOR_YTEXT_ID) return;
             updateLocalProfile((profile: Profile) => ({
                 ...profile,
-                activeEditor: textEditorTextId,
+                activeEditor: TEXT_EDITOR_YTEXT_ID,
                 editors: {
-                    ...profile.editors, [textEditorTextId]: {
-                        ...profile.editors[textEditorTextId], position: e.position
+                    ...profile.editors, [TEXT_EDITOR_YTEXT_ID]: {
+                        ...profile.editors[TEXT_EDITOR_YTEXT_ID], position: e.position
                     }
                 }
             }));
@@ -52,7 +52,7 @@ export default function TextEditor() {
 
         // Rebind MonacoBinding when yText changes (language switch)
         bindingRef.current = new MonacoBinding(
-            yDoc.getText(textEditorTextId),
+            yDoc.getText(TEXT_EDITOR_YTEXT_ID),
             model,
             new Set([editor])
         );
@@ -71,13 +71,13 @@ export default function TextEditor() {
         if (!editorRef.current) return;
         const editor = editorRef.current;
 
-        if (remoteProfile.activeEditor !== textEditorTextId) return;
+        if (remoteProfile.activeEditor !== TEXT_EDITOR_YTEXT_ID) return;
 
         // ensure cursor widget exists for current language
         if (!cursorWidgetRef.current) {
             cursorWidgetRef.current = new CursorWidget(
-                remoteProfile.username,
-                remoteProfile.editors[textEditorTextId].position,
+                remoteProfile.displayName,
+                remoteProfile.editors[TEXT_EDITOR_YTEXT_ID].position,
                 ""
             )
             editor.addContentWidget(cursorWidgetRef.current);
@@ -85,7 +85,7 @@ export default function TextEditor() {
 
         // update cursor widget's position
         const currentWidget = cursorWidgetRef.current;
-        currentWidget.setPosition(remoteProfile.editors[textEditorTextId].position);
+        currentWidget.setPosition(remoteProfile.editors[TEXT_EDITOR_YTEXT_ID].position);
         editor.layoutContentWidget(currentWidget);
         currentWidget.show(1000); // hide after 1 second
     }, [remoteProfile.editors]);

@@ -5,18 +5,12 @@ import { Copy, Plus, Menu, Moon, Sun, ArrowLeftRight, ArrowRightLeft } from "luc
 
 import {
     navLinks,
-    localVideoElementId,
-    remoteVideoElementId,
-    smallScreenWidth,
+    LOCAL_VIDEO_ELEMENT_ID,
+    SMALL_SCREEN_WIDTH,
 } from "@/constants/constants"
 import {
     ensureLocalStream,
-    createOfferForRoom,
-    createAnswerForRoom,
-    setRemoteAnswer,
-    addRemoteIceCandidate,
-    isRemoteDescriptionSet,
-    // getPeerConnection,
+    getConnections,
     toggleLocalCamera,
     toggleLocalMic,
     toggleRemoteVideoAndAudioSources,
@@ -37,8 +31,7 @@ import {
 import CodeEditor from "@/components/CodeEditor/CodeEditor"
 import LivestreamPlayer from "@/components/LivestreamPlayer/LivestreamPlayer"
 import { Button } from "@/components/ui/button"
-import { databaseService } from "@/services/FirebaseDatabaseService"
-import type { Room } from "@/services/DatabaseService"
+import { roomService } from "@/services/RoomService"
 import { useRoom } from "@/hooks/useRoom"
 import { CollaborationProvider, useCollaboration } from "@/context/CollaborationContext"
 import { useTheme } from "@/context/ThemeContext"
@@ -47,13 +40,14 @@ import { Spinner } from "@/components/ui/spinner"
 import useWindowSize from "@/hooks/useWindowSize"
 
 import avatarPlaceholder from "@/assets/avatar-placeholder.svg"
+import { getRemoteVideoElementId } from "@/lib/utils"
 
 export default function RoomPage() {
     const { width } = useWindowSize()
 
     return (
         <CollaborationProvider>
-            {width >= smallScreenWidth ?
+            {width >= SMALL_SCREEN_WIDTH ?
                 <RoomContent />
                 :
                 <div className="sm:hidden flex justify-center items-center text-3xl p-5 h-full">
@@ -67,7 +61,8 @@ export default function RoomPage() {
 
 function RoomContent() {
     const [isPeerJoined, setIsPeerJoined] = useState(false);
-    const isJoinAttemptedRef = useRef<boolean>(false);
+    const isJoinRoomAttemptedRef = useRef<boolean>(false);
+    const isCreateRoomAttemptedRef = useRef<boolean>(false);
 
     const navigate = useNavigate();
     const pathParams = useParams(); // get id path variable from the router!
@@ -75,55 +70,34 @@ function RoomContent() {
     const { connectDataChannel, localProfile, remoteProfile, updateLocalProfile } = useCollaboration();
     const { direction } = useTheme();
 
+    const handleConnectionSuccess = () => {
+        setIsPeerJoined(true);
+        toast.success(`A Peer has successfully joined the room.`);
+    }
+    const handleDataChannelReady = (channel: RTCDataChannel) => {
+        // console.log('[DEBUG]: data channel ready (creator)');
+        connectDataChannel(channel);
+    }
 
     const createRoom = async () => {
+        if (isCreateRoomAttemptedRef.current) return; // Prevent duplicate create room attempts
+        // console.log("[DEBUG]: Attempting to create room.");
+        isCreateRoomAttemptedRef.current = true;
+
         try {
-            // Create room in database
-            const room = await databaseService.createRoom();
-            setCurrentRoomId(room.id);
-            navigate(`/rooms/${room.id}`, { replace: true });
-
-            // Create SDP offer and set up ICE candidate handling
-            const offer = await createOfferForRoom(
-                async (candidate) => {
-                    // Save Offer's ICE candidates to database as they arrive
-                    await databaseService.addIceCandidate(room.id, candidate, true);
-                },
-                () => {
-                    setIsPeerJoined(true);
-                    toast.success(`A Peer has successfully joined the room: ${room.id}`);
-                },
-                (channel) => {
-                    // console.log('[DEBUG]: data channel ready (creator)');
-                    connectDataChannel(channel);
-                }
+            const participant: Participant = { avatar: localProfile.avatar, displayName: localProfile.displayName };
+            const roomId = await roomService.createRoom(
+                participant,
+                handleConnectionSuccess,
+                handleDataChannelReady
             );
-
-            // Save offer to database
-            await databaseService.updateRoomOffer(room.id, offer);
-
-            // Listen for Room Updates (answer & ICE candidates from peer)
-            const unsubscribe = databaseService.listenForRoomUpdates(room.id, async (room) => {
-                // console.log('[DEBUG]: Creator received room updates:', room);
-                // console.log("[DEBUG]: PeerConnection:", getPeerConnection());
-                if (!isRemoteDescriptionSet() && room.answer) {
-                    await setRemoteAnswer(room.answer);
-                }
-
-                // Fetch and add any ICE candidates from the peer
-                if (room.answerIceCandidates) {
-                    // toast(`[DEBUG]: Received ICE candidate ${room.answerIceCandidates.length - 1} from joiner peer`);
-                    const lastCandidate = room.answerIceCandidates[room.answerIceCandidates.length - 1];
-                    await addRemoteIceCandidate(lastCandidate);
-                }
-
-                unsubscribe();
-            });
-
+            setCurrentRoomId(roomId);
+            navigate(`/rooms/${roomId}`);
             toast.success(`Room created successfully!`);
-            copyRoomLink(room.id);
+            copyRoomLink(roomId, localProfile.currentLanguage)
         } catch (error) {
             console.error('Error creating room:', error);
+            toast.error(String(error));
             toast.error('Failed to create room. Please try again.');
         }
     };
@@ -134,65 +108,22 @@ function RoomContent() {
             return;
         }
 
-        if (isJoinAttemptedRef.current) return; // Prevent duplicate join attempts
+        if (isJoinRoomAttemptedRef.current) return; // Prevent duplicate join room attempts
         // console.log("[DEBUG]: Attempting to join room:", roomId);
-        isJoinAttemptedRef.current = true;
+        isJoinRoomAttemptedRef.current = true;
 
         try {
-            // Fetch room and get the offer
-            let room: Room;
-            try {
-                room = await databaseService.getRoomById(roomId);
-            } catch (error) {
-                toast.error(String(error));
-                return;
-            }
 
-            if (!room.offer) {
-                toast.error('Room does not have an offer yet. Please wait for the room creator to set up the connection.');
-                return;
-            }
-
-            // Create SDP answer, Set up ICE candidate handling, and Set Remote Description
-            const answer = await createAnswerForRoom(room.offer,
-                async (candidate) => {
-                    // Save Answer's ICE candidates to database as they arrive
-                    await databaseService.addIceCandidate(room.id, candidate, false);
-                },
-                () => {
-                    setIsPeerJoined(true);
-                    toast.success(`Successfully joined room: ${room.id.slice(0, 6)}...`);
-                },
-                (channel) => {
-                    // console.log('[DEBUG]: data channel ready (joiner)');
-                    connectDataChannel(channel);
-                }
+            const participant: Participant = { avatar: localProfile.avatar, displayName: localProfile.displayName };
+            await roomService.joinRoom(
+                roomId,
+                participant,
+                handleConnectionSuccess,
+                handleDataChannelReady
             );
-
-            // Save answer to database
-            await databaseService.updateRoomAnswer(room.id, answer);
-
-            // Add any ICE candidates from the room creator
-            if (room.offerIceCandidates) {
-                for (let candidate of room.offerIceCandidates) {
-                    await addRemoteIceCandidate(candidate);
-                }
-            }
-
-            // Listen for Room Updates (ICE candidates from room creator)
-            const unsubscribe = databaseService.listenForRoomUpdates(room.id, async (room) => {
-                // console.log('[DEBUG]: Joiner received room updates:', room);
-                // console.log("[DEBUG]: PeerConnection:", getPeerConnection());
-                // add any ICE candidates from the peer
-                if (room.offerIceCandidates) {
-                    const lastCandidate = room.offerIceCandidates[room.offerIceCandidates.length - 1];
-                    await addRemoteIceCandidate(lastCandidate);
-                }
-
-                unsubscribe();
-            });
         } catch (error) {
             console.error('Error joining room:', error);
+            toast.error(String(error));
             toast.error('Failed to join room. Please verify the link and try again.');
         }
     }
@@ -220,13 +151,15 @@ function RoomContent() {
         })()
     }, [])
 
-    // Update remote video and audio elements when peer has joined
+    // Update remote video and audio elements when peer joins or updates their profile.
     useEffect(() => {
         (async () => {
-            if (isPeerJoined) {
-                // Update remote video window and hidden audio element with remote profile
-                await toggleRemoteVideoAndAudioSources(remoteProfile.isCameraOn, remoteProfile.isMicrophoneOn)
-            }
+            Object.keys(getConnections()).forEach(connectionId => {
+                if (isPeerJoined) {
+                    // Update remote video window and hidden audio element with remote profile
+                    toggleRemoteVideoAndAudioSources(connectionId, remoteProfile.isCameraOn, remoteProfile.isMicrophoneOn)
+                }
+            })
         })()
     }, [isPeerJoined, remoteProfile.isCameraOn, remoteProfile.isMicrophoneOn])
 
@@ -247,11 +180,13 @@ function RoomContent() {
                 <ResizableHandle withHandle />
                 <ResizablePanel collapsible className="h-full flex flex-col justify-center items-center" dir="ltr" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
                     <div className="flex flex-col justify-center items-center gap-4 p-4 max-h-100 ">
-                        <LivestreamPlayer id={remoteVideoElementId} poster={avatarPlaceholder}
-                            autoPlay playsInline withControls
-                            profile={remoteProfile} hidden={!isPeerJoined}
-                        />
-                        <LivestreamPlayer id={localVideoElementId} poster={avatarPlaceholder}
+                        {Object.keys(getConnections()).map(connectionId => (
+                            <LivestreamPlayer key={connectionId} id={getRemoteVideoElementId(connectionId)} poster={avatarPlaceholder}
+                                autoPlay playsInline withControls
+                                profile={remoteProfile} hidden={!isPeerJoined}
+                            />
+                        ))}
+                        <LivestreamPlayer id={LOCAL_VIDEO_ELEMENT_ID} poster={avatarPlaceholder}
                             autoPlay playsInline withControls muted
                             profile={localProfile} isLocalProfile
                             onCameraToggle={handleCameraToggle} onMicToggle={handleMicToggle}
