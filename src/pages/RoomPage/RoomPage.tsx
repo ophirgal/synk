@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef } from "react"
 import { useParams, useNavigate } from "react-router"
 import { toast } from "sonner"
 import { Copy, Plus, Menu, Moon, Sun, ArrowLeftRight, ArrowRightLeft } from "lucide-react"
@@ -8,13 +8,6 @@ import {
     LOCAL_VIDEO_ELEMENT_ID,
     SMALL_SCREEN_WIDTH,
 } from "@/constants/constants"
-import {
-    ensureLocalStream,
-    getConnections,
-    toggleLocalCamera,
-    toggleLocalMic,
-    toggleRemoteVideoAndAudioSources,
-} from "@/lib/webrtc"
 import {
     ResizableHandle,
     ResizablePanel,
@@ -31,7 +24,7 @@ import {
 import CodeEditor from "@/components/CodeEditor/CodeEditor"
 import LivestreamPlayer from "@/components/LivestreamPlayer/LivestreamPlayer"
 import { Button } from "@/components/ui/button"
-import { roomService } from "@/services/RoomService"
+import { createRoomService } from "@/services/RoomService"
 import { useRoom } from "@/hooks/useRoom"
 import { CollaborationProvider, useCollaboration } from "@/context/CollaborationContext"
 import { useTheme } from "@/context/ThemeContext"
@@ -60,23 +53,21 @@ export default function RoomPage() {
 }
 
 function RoomContent() {
-    const [isPeerJoined, setIsPeerJoined] = useState(false);
     const isJoinRoomAttemptedRef = useRef<boolean>(false);
     const isCreateRoomAttemptedRef = useRef<boolean>(false);
 
     const navigate = useNavigate();
     const pathParams = useParams(); // get id path variable from the router!
     const { roomLink, setCurrentRoomId, copyRoomLink } = useRoom();
-    const { connectDataChannel, localProfile, remoteProfile, updateLocalProfile } = useCollaboration();
+    const { connectDataChannel, localProfile, remoteProfiles, updateLocalProfile, connectionProvider, connections } = useCollaboration();
+    const roomService = createRoomService(connectionProvider);
     const { direction } = useTheme();
 
     const handleConnectionSuccess = () => {
-        setIsPeerJoined(true);
         toast.success(`A Peer has successfully joined the room.`);
     }
-    const handleDataChannelReady = (channel: RTCDataChannel) => {
-        // console.log('[DEBUG]: data channel ready (creator)');
-        connectDataChannel(channel);
+    const handleDataChannelReady = (connectionId: string, channel: RTCDataChannel) => {
+        connectDataChannel(connectionId, channel);
     }
 
     const createRoom = async () => {
@@ -129,11 +120,11 @@ function RoomContent() {
     }
 
     const handleCameraToggle = useCallback(async () => {
-        await toggleLocalCamera(!localProfile.isCameraOn)
+        await connectionProvider.toggleLocalCamera(!localProfile.isCameraOn)
         updateLocalProfile({ isCameraOn: !localProfile.isCameraOn })
     }, [localProfile.isCameraOn])
     const handleMicToggle = useCallback(() => {
-        toggleLocalMic(!localProfile.isMicrophoneOn)
+        connectionProvider.toggleLocalMic(!localProfile.isMicrophoneOn)
         updateLocalProfile({ isMicrophoneOn: !localProfile.isMicrophoneOn })
     }, [localProfile.isMicrophoneOn])
 
@@ -141,7 +132,7 @@ function RoomContent() {
     useEffect(() => {
         (async () => {
             // IMPORTANT: must ensure local stream before creating/joining room!
-            await ensureLocalStream(false, false) // cam & mic turned off until user action
+            await connectionProvider.ensureLocalStream(false, false) // cam & mic turned off until user action
             if (pathParams.id) {
                 setCurrentRoomId(pathParams.id)
                 await joinRoom(pathParams.id)
@@ -153,15 +144,14 @@ function RoomContent() {
 
     // Update remote video and audio elements when peer joins or updates their profile.
     useEffect(() => {
-        (async () => {
-            Object.keys(getConnections()).forEach(connectionId => {
-                if (isPeerJoined) {
-                    // Update remote video window and hidden audio element with remote profile
-                    toggleRemoteVideoAndAudioSources(connectionId, remoteProfile.isCameraOn, remoteProfile.isMicrophoneOn)
-                }
-            })
-        })()
-    }, [isPeerJoined, remoteProfile.isCameraOn, remoteProfile.isMicrophoneOn])
+        Object.keys(connectionProvider.getConnections()).forEach(connectionId => {
+            const remoteProfile = remoteProfiles[connectionId];
+            if (remoteProfile) {
+                // Sync up remote video window and hidden audio element with remote profile (if needed)
+                connectionProvider.toggleRemoteVideoAndAudioSources(connectionId, remoteProfile.isCameraOn, remoteProfile.isMicrophoneOn)
+            }
+        })
+    }, [remoteProfiles])
 
     return (
         <div className="hidden sm:flex flex-col border-t h-full">
@@ -180,12 +170,16 @@ function RoomContent() {
                 <ResizableHandle withHandle />
                 <ResizablePanel collapsible className="h-full flex flex-col justify-center items-center" dir="ltr" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
                     <div className="flex flex-col justify-center items-center gap-4 p-4 max-h-100 ">
-                        {Object.keys(getConnections()).map(connectionId => (
-                            <LivestreamPlayer key={connectionId} id={getRemoteVideoElementId(connectionId)} poster={avatarPlaceholder}
-                                autoPlay playsInline withControls
-                                profile={remoteProfile} hidden={!isPeerJoined}
-                            />
-                        ))}
+                        {Object.entries(connections).map(([connId, conn]) => {
+                            const remoteProfile = remoteProfiles[connId];
+                            if (!remoteProfile) return null;
+                            return (
+                                <LivestreamPlayer key={connId} id={getRemoteVideoElementId(connId)} poster={avatarPlaceholder}
+                                    autoPlay playsInline withControls connectionState={conn.state}
+                                    profile={remoteProfile}
+                                />
+                            );
+                        })}
                         <LivestreamPlayer id={LOCAL_VIDEO_ELEMENT_ID} poster={avatarPlaceholder}
                             autoPlay playsInline withControls muted
                             profile={localProfile} isLocalProfile

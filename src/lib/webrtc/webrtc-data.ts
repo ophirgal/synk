@@ -17,68 +17,82 @@ export type Profile = {
     isMicrophoneOn: boolean;
     isRoomCreator: boolean;
     currentLanguage: string;
+    languageChangedAt: number;
     activeEditor?: string;
     editors: Editors;
+};
+
+type ConnectionState = {
+    dataChannel: RTCDataChannel;
+    isConnected: boolean;
+    isSynced: boolean;
 };
 
 export class WebRTCDataProvider {
     private doc: Y.Doc;
     private localProfileRef: { current: Profile };
-    private onRemoteProfileUpdate: (profile: Profile) => void;
-    private dataChannel: RTCDataChannel | null = null;
-    private isConnected = false;
+    private onRemoteProfileUpdate: (connectionId: string, profile: Profile) => void;
+    private connections: { [connectionId: string]: ConnectionState } = {};
 
-    onSynced?: () => void;
-    onDisconnect?: () => void;
+    onSynced?: (connectionId: string) => void;
+    onDisconnect?: (connectionId: string) => void;
 
-    constructor(doc: Y.Doc, localProfileRef: { current: Profile }, onRemoteProfileUpdate: (profile: Profile) => void) {
+    constructor(doc: Y.Doc, localProfileRef: { current: Profile }, onRemoteProfileUpdate: (connectionId: string, profile: Profile) => void) {
         this.doc = doc;
         this.doc.on('update', this.handleLocalDocUpdate);
         this.localProfileRef = localProfileRef;
         this.onRemoteProfileUpdate = onRemoteProfileUpdate;
     }
 
-    connect(dataChannel: RTCDataChannel): void {
-        this.dataChannel = dataChannel;
+    connect(connectionId: string, dataChannel: RTCDataChannel): void {
+        this.connections[connectionId] = {
+            dataChannel,
+            isConnected: false,
+            isSynced: false,
+        };
 
-        this.dataChannel.onmessage = this.handleRemoteMessage;
-        this.dataChannel.onclose = this.handleChannelClose;
-        this.dataChannel.onerror = this.handleChannelError;
+        dataChannel.onmessage = (event) => this.handleRemoteMessage(connectionId, event);
+        dataChannel.onclose = () => this.handleChannelClose(connectionId);
+        dataChannel.onerror = (error) => this.handleChannelError(connectionId, error);
 
-        if (this.dataChannel.readyState === 'open') {
-            this.isConnected = true;
-            this.sendSyncStep1();
+        if (dataChannel.readyState === 'open') {
+            this.connections[connectionId].isConnected = true;
+            this.sendSyncStep1(connectionId);
             this.sendProfileUpdate(this.localProfileRef.current);
         }
     }
 
     private handleLocalDocUpdate = (update: Uint8Array, origin: unknown): void => {
-        if (origin === 'remote' || !this.isConnected || !this.dataChannel) {
+        if (origin === 'remote') {
             return;
         }
 
-        this.sendMessage({
-            type: 'yjs-update',
-            data: Array.from(update),
+        // Broadcast to all connected peers
+        Object.entries(this.connections).forEach(([connectionId, conn]) => {
+            if (conn.isConnected) {
+                this.sendMessage(connectionId, {
+                    type: 'yjs-update',
+                    data: Array.from(update),
+                });
+            }
         });
     };
 
-    private handleRemoteMessage = (event: MessageEvent): void => {
+    private handleRemoteMessage = (connectionId: string, event: MessageEvent): void => {
         try {
             const message = JSON.parse(event.data) as SyncMessage;
-            // alert("received message: " + JSON.stringify(message))
             switch (message.type) {
                 case 'sync-step-1':
-                    this.handleSyncStep1(message);
+                    this.handleSyncStep1(connectionId, message);
                     break;
                 case 'sync-step-2':
-                    this.handleSyncStep2(message);
+                    this.handleSyncStep2(connectionId, message);
                     break;
                 case 'yjs-update':
                     this.handleRemoteYjsUpdate(message);
                     break;
                 case 'profile-update':
-                    this.handleRemoteProfileUpdate(message);
+                    this.handleRemoteProfileUpdateMessage(connectionId, message);
                     break;
             }
         } catch (err) {
@@ -86,27 +100,27 @@ export class WebRTCDataProvider {
         }
     };
 
-    private sendSyncStep1(): void {
+    private sendSyncStep1(connectionId: string): void {
         const stateVector = Y.encodeStateVector(this.doc);
-        this.sendMessage({
+        this.sendMessage(connectionId, {
             type: 'sync-step-1',
             stateVector: Array.from(stateVector),
         });
     }
 
-    private handleSyncStep1(message: { stateVector: number[] }): void {
+    private handleSyncStep1(connectionId: string, message: { stateVector: number[] }): void {
         const remoteStateVector = new Uint8Array(message.stateVector);
         const diff = Y.encodeStateAsUpdate(this.doc, remoteStateVector);
         const ourStateVector = Y.encodeStateVector(this.doc);
 
-        this.sendMessage({
+        this.sendMessage(connectionId, {
             type: 'sync-step-2',
             diff: Array.from(diff),
             stateVector: Array.from(ourStateVector),
         });
     }
 
-    private handleSyncStep2(message: { diff: number[]; stateVector: number[] }): void {
+    private handleSyncStep2(connectionId: string, message: { diff: number[]; stateVector: number[] }): void {
         const diff = new Uint8Array(message.diff);
         Y.applyUpdate(this.doc, diff, 'remote');
 
@@ -114,26 +128,33 @@ export class WebRTCDataProvider {
         const ourDiff = Y.encodeStateAsUpdate(this.doc, remoteStateVector);
 
         if (ourDiff.length > 0) {
-            this.sendMessage({
+            this.sendMessage(connectionId, {
                 type: 'yjs-update',
                 data: Array.from(ourDiff),
             });
         }
 
-        this.onSynced?.();
+        if (this.connections[connectionId]) {
+            this.connections[connectionId].isSynced = true;
+        }
+        this.onSynced?.(connectionId);
     }
 
     public sendProfileUpdate = (profile: Profile): void => {
-        // alert("sending local profile: " + JSON.stringify(profile))
-        this.sendMessage({
-            type: 'profile-update',
-            data: JSON.stringify(profile),
+        // Broadcast profile to all connected peers
+        Object.entries(this.connections).forEach(([connectionId, conn]) => {
+            if (conn.isConnected) {
+                this.sendMessage(connectionId, {
+                    type: 'profile-update',
+                    data: JSON.stringify(profile),
+                });
+            }
         });
     }
 
-    private handleRemoteProfileUpdate(message: { data: string }): void {
+    private handleRemoteProfileUpdateMessage(connectionId: string, message: { data: string }): void {
         const profile = JSON.parse(message.data) as Profile;
-        this.onRemoteProfileUpdate(profile);
+        this.onRemoteProfileUpdate(connectionId, profile);
     }
 
     private handleRemoteYjsUpdate(message: { data: number[] }): void {
@@ -141,24 +162,32 @@ export class WebRTCDataProvider {
         Y.applyUpdate(this.doc, update, 'remote');
     }
 
-    private sendMessage(message: SyncMessage): void {
-        if (this.dataChannel?.readyState === 'open') {
-            this.dataChannel.send(JSON.stringify(message));
+    private sendMessage(connectionId: string, message: SyncMessage): void {
+        const conn = this.connections[connectionId];
+        if (conn?.dataChannel?.readyState === 'open') {
+            conn.dataChannel.send(JSON.stringify(message));
         }
     }
 
-    private handleChannelClose = (): void => {
-        this.isConnected = false;
-        this.onDisconnect?.();
+    private handleChannelClose = (connectionId: string): void => {
+        if (this.connections[connectionId]) {
+            this.connections[connectionId].isConnected = false;
+        }
+        this.onDisconnect?.(connectionId);
     };
 
-    private handleChannelError = (error: Event): void => {
-        console.error('[WebRTCDataProvider] Data channel error:', error);
+    private handleChannelError = (connectionId: string, error: Event): void => {
+        console.error(`[WebRTCDataProvider] Data channel error for ${connectionId}:`, error);
     };
+
+    disconnect(connectionId: string): void {
+        if (this.connections[connectionId]) {
+            delete this.connections[connectionId];
+        }
+    }
 
     destroy(): void {
         this.doc.off('update', this.handleLocalDocUpdate);
-        this.dataChannel = null;
-        this.isConnected = false;
+        this.connections = {};
     }
 }

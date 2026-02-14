@@ -130,7 +130,7 @@ function HeroSection() {
                 <br />
                 Just pure, <span className="font-semibold text-indigo-500 dark:text-indigo-400">[synk]</span>hronized productivity.
             </p>
-            <img src={demoImage} className="block lg:hidden w-full mb-6"/>
+            <img src={demoImage} className="block lg:hidden w-full mb-6" />
             <a
                 href="/rooms"
                 className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg sm:text-xl px-6 sm:px-8 py-3 sm:py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
@@ -138,7 +138,7 @@ function HeroSection() {
                 [synk] Up!
             </a>
         </div>
-        <video src={demoVideo} className="hidden lg:block flex-1 w-100 scale-150 md:pr-25" autoPlay loop muted playsInline />
+        <video src={demoVideo} className="hidden lg:block flex-1 w-100 scale-150 md:pr-25 md:pl-5" autoPlay loop muted playsInline />
     </section>
 
 }

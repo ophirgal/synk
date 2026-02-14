@@ -17,8 +17,9 @@ export default function TextEditor() {
     const [isEditorReady, setIsEditorReady] = useState(false);
     const editorRef = useRef<monaco.IStandaloneCodeEditor | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
-    const cursorWidgetRef = useRef<CursorWidget | null>(null);
-    const { yDoc, remoteProfile, localProfile, updateLocalProfile } = useCollaboration();
+    // Map of connectionId -> CursorWidget
+    const cursorWidgetsRef = useRef<{ [connectionId: string]: CursorWidget }>({});
+    const { yDoc, remoteProfiles, localProfile, updateLocalProfile } = useCollaboration();
     const { isDarkMode } = useTheme();
 
     const handleIncreaseFontSize = () => {
@@ -71,24 +72,31 @@ export default function TextEditor() {
         if (!editorRef.current) return;
         const editor = editorRef.current;
 
-        if (remoteProfile.activeEditor !== TEXT_EDITOR_YTEXT_ID) return;
+        // Iterate over all remote profiles
+        Object.entries(remoteProfiles).forEach(([connectionId, remoteProfile]) => {
+            if (remoteProfile.activeEditor !== TEXT_EDITOR_YTEXT_ID) return;
 
-        // ensure cursor widget exists for current language
-        if (!cursorWidgetRef.current) {
-            cursorWidgetRef.current = new CursorWidget(
-                remoteProfile.displayName,
-                remoteProfile.editors[TEXT_EDITOR_YTEXT_ID].position,
-                ""
-            )
-            editor.addContentWidget(cursorWidgetRef.current);
-        }
+            const position = remoteProfile.editors[TEXT_EDITOR_YTEXT_ID]?.position;
+            if (!position) return;
 
-        // update cursor widget's position
-        const currentWidget = cursorWidgetRef.current;
-        currentWidget.setPosition(remoteProfile.editors[TEXT_EDITOR_YTEXT_ID].position);
-        editor.layoutContentWidget(currentWidget);
-        currentWidget.show(1000); // hide after 1 second
-    }, [remoteProfile.editors]);
+            // Ensure cursor widget exists for this connection
+            if (!cursorWidgetsRef.current[connectionId]) {
+                const widget = new CursorWidget(
+                    remoteProfile.displayName,
+                    position,
+                    connectionId // use connectionId for unique widget ID
+                );
+                cursorWidgetsRef.current[connectionId] = widget;
+                editor.addContentWidget(widget);
+            }
+
+            // Update cursor widget's position
+            const currentWidget = cursorWidgetsRef.current[connectionId];
+            currentWidget.setPosition(position);
+            editor.layoutContentWidget(currentWidget);
+            currentWidget.show(1000); // hide after 1 second
+        });
+    }, [remoteProfiles]);
 
     return (
         <div className="flex flex-col h-full gap-2">

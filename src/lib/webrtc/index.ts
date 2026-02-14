@@ -1,14 +1,8 @@
 export { WebRTCDataProvider, type Profile, type Editors } from './webrtc-data';
 export {
-    ensureLocalStream,
-    ensureRemoteStream,
-    toggleLocalCamera,
-    toggleLocalMic,
-    toggleRemoteVideoAndAudioSources,
-    createOfferForConnection,
-    createAnswerForConnection,
-    isRemoteDescriptionSet,
-    setRemoteAnswer,
-    addRemoteIceCandidate,
-    getConnections
+    WebRTCConnectionProvider,
+    type WebRTCConnection
 } from './webrtc-media';
+export {
+    RTCPeerConnectionState
+} from './constants'

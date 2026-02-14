@@ -4,24 +4,30 @@ import {
     useState,
     useEffect,
     useRef,
-    type ReactNode
+    type ReactNode,
+    useSyncExternalStore,
+    useMemo
 } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import * as Y from 'yjs';
 
-import { WebRTCDataProvider, type Profile, type Editors } from '@/lib/webrtc';
+import { WebRTCDataProvider, type Profile, type Editors, WebRTCConnectionProvider, type WebRTCConnection } from '@/lib/webrtc';
 import { runtimeRegistry } from '@/lib/runtimes';
 import { generateAvatarAndDisplayName } from '@/lib/utils';
 import { CURRENT_LANGUAGE_SEARCH_PARAM, TEXT_EDITOR_DEFAULT_TEXT, TEXT_EDITOR_YTEXT_ID } from '@/constants/constants';
 
+export type RemoteProfiles = { [connectionId: string]: Profile };
+
 interface CollaborationContextType {
     yDoc: Y.Doc;
     localProfile: Profile;
-    remoteProfile: Profile;
+    remoteProfiles: RemoteProfiles;
     updateLocalProfile: (update: Partial<Profile> | ((prev: Profile) => Profile)) => void;
     isConnected: boolean;
     isSynced: boolean;
-    connectDataChannel: (channel: RTCDataChannel) => void;
+    connectDataChannel: (connectionId: string, channel: RTCDataChannel) => void;
+    connectionProvider: WebRTCConnectionProvider;
+    connections: { [connectionId: string]: WebRTCConnection };
 }
 
 const CollaborationContext = createContext<CollaborationContextType | null>(null);
@@ -32,7 +38,9 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     const [_, setSearchParams] = useSearchParams();
     const [avatar, displayName] = generateAvatarAndDisplayName()
     const [localProfile, setLocalProfile] = useState<Profile>(createInitialProfile(avatar, displayName));
-    const [remoteProfile, setRemoteProfile] = useState<Profile>(createInitialProfile());
+    const [remoteProfiles, setRemoteProfiles] = useState<RemoteProfiles>({});
+    const connectionProvider = useMemo<WebRTCConnectionProvider>(() => new WebRTCConnectionProvider(), []);
+    const connections = useSyncExternalStore(connectionProvider.subscribe, connectionProvider.getSnapshot);
 
     const yDocRef = useRef<Y.Doc>(new Y.Doc());
     const providerRef = useRef<WebRTCDataProvider | null>(null);
@@ -40,23 +48,35 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     const localProfileRef = useRef(localProfile);
     localProfileRef.current = localProfile;
 
-    const handleRemoteProfileUpdate = (profile: Profile) => {
-        // alert("received remote profile update: " + JSON.stringify(profile))
-        setRemoteProfile(_ => ({ ...profile })); // important: force an update by creating a new object
+    const handleRemoteProfileUpdate = (connectionId: string, profile: Profile) => {
+        setRemoteProfiles(prev => ({
+            ...prev,
+            [connectionId]: { ...profile }
+        }));
     }
 
     const updateLocalProfile = (update: Partial<Profile> | ((prev: Profile) => Profile)) => {
         setLocalProfile(prev => {
+            let newProfile: Profile;
             if (typeof update === 'function') {
-                return update(prev);
+                newProfile = update(prev);
+            } else {
+                newProfile = { ...prev, ...update };
             }
-            return { ...prev, ...update };
+
+            // Set timestamp when language changes (unless timestamp is explicitly provided)
+            if (newProfile.currentLanguage !== prev.currentLanguage &&
+                newProfile.languageChangedAt === prev.languageChangedAt) {
+                newProfile = { ...newProfile, languageChangedAt: Date.now() };
+            }
+
+            return newProfile;
         });
     };
 
-    const connectDataChannel = (channel: RTCDataChannel) => {
+    const connectDataChannel = (connectionId: string, channel: RTCDataChannel) => {
         if (providerRef.current) {
-            providerRef.current.connect(channel);
+            providerRef.current.connect(connectionId, channel);
             setIsConnected(true);
         }
     };
@@ -79,13 +99,24 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         providerRef.current = new WebRTCDataProvider(yDocRef.current, localProfileRef, handleRemoteProfileUpdate);
 
-        providerRef.current.onSynced = () => {
+        providerRef.current.onSynced = (_: string) => {
             setIsSynced(true);
         };
 
-        providerRef.current.onDisconnect = () => {
-            setIsConnected(false);
-            setIsSynced(false);
+        providerRef.current.onDisconnect = (connectionId: string) => {
+            setRemoteProfiles(prev => {
+                const updated = { ...prev };
+                delete updated[connectionId];
+                return updated;
+            });
+            // Only set disconnected if no more connections remain
+            setRemoteProfiles(prev => {
+                if (Object.keys(prev).length === 0) {
+                    setIsConnected(false);
+                    setIsSynced(false);
+                }
+                return prev;
+            });
         };
 
         // Display default text for all editors (text editor and all programming language editors)
@@ -114,11 +145,13 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
             value={{
                 yDoc: yDocRef.current,
                 localProfile,
-                remoteProfile,
+                remoteProfiles,
                 updateLocalProfile,
                 isConnected,
                 isSynced,
                 connectDataChannel,
+                connectionProvider,
+                connections
             }}
         >
             {children}
@@ -162,6 +195,7 @@ function createInitialProfile(
         isMicrophoneOn,
         isRoomCreator,
         currentLanguage,
+        languageChangedAt: isRoomCreator ? Date.now() : 0,
         activeEditor,
         editors: initialEditors,
     };

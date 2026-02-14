@@ -32,9 +32,10 @@ export default function CodeEditor() {
     const editorRef = useRef<monaco.IStandaloneCodeEditor | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
     const outputContainerRef = useRef<HTMLDivElement>(null);
-    const cursorWidgetsRef = useRef<{ [key: string]: CursorWidget }>({});
-    const lastRemoteCursorPosRef = useRef<IPosition | null>(null);
-    const { yDoc, remoteProfile, localProfile, updateLocalProfile } = useCollaboration();
+    // Map of connectionId -> (languageId -> CursorWidget)
+    const cursorWidgetsRef = useRef<{ [connectionId: string]: { [languageId: string]: CursorWidget } }>({});
+    const lastRemoteCursorPosRef = useRef<{ [connectionId: string]: IPosition | null }>({});
+    const { yDoc, remoteProfiles, localProfile, updateLocalProfile } = useCollaboration();
     const { isDarkMode } = useTheme();
 
     const runtime = runtimeRegistry[localProfile.currentLanguage];
@@ -116,46 +117,61 @@ export default function CodeEditor() {
         yText.delete(0, yText.toString().length);
     }, [runtime]);
 
-    // Respond to remote editor changes (e.g. cursor position)
+    // Respond to remote editor changes: cursor position, prog language switch.
     // - displays widget for remote cursor
-    // Bear in mind -- you are trying to listen to nested changes in remoteProfile,
-    // but in reality you are listening to any and all updates to the remoteProfile.
+    // Bear in mind -- you are trying to listen to nested changes in remoteProfiles,
+    // but in reality you are listening to any and all updates to the remoteProfiles.
     useEffect(() => {
         if (!editorRef.current) return;
         const editor = editorRef.current;
 
-        // Ensure current language matches remote.
-        // ---
-        // used to be -- if (remoteProfile.activeEditor !== localProfile.currentLanguage) return;
-        // left as a comment for future reference in case we want to revert.
-        if (remoteProfile.currentLanguage !== localProfile.currentLanguage) {
-            updateLocalProfile({ currentLanguage: remoteProfile.currentLanguage });
-            return;
-        }
+        // Iterate over all remote profiles
+        Object.entries(remoteProfiles).forEach(([connectionId, remoteProfile]) => {
+            // alert("sync with remote profile: "+ JSON.stringify(remoteProfile));
+            // Sync language only if remote change is more recent than local change
+            if (remoteProfile.currentLanguage !== localProfile.currentLanguage) {
+                const remoteChangedAt = remoteProfile.languageChangedAt ?? 0;
+                const localChangedAt = localProfile.languageChangedAt ?? 0;
 
-        const newPos = remoteProfile.editors[localProfile.currentLanguage].position;
-        const lastPos = lastRemoteCursorPosRef.current;
-        if (lastPos && lastPos.lineNumber === newPos.lineNumber && lastPos.column === newPos.column) return;
-        lastRemoteCursorPosRef.current = newPos;
-
-        // ensure cursor widget exists for current language
-        if (!(localProfile.currentLanguage in cursorWidgetsRef.current)) {
-            cursorWidgetsRef.current = {
-                [localProfile.currentLanguage]: new CursorWidget(
-                    remoteProfile.displayName,
-                    remoteProfile.editors[localProfile.currentLanguage].position,
-                    ""
-                ),
+                if (remoteChangedAt > localChangedAt) {
+                    updateLocalProfile({
+                        currentLanguage: remoteProfile.currentLanguage,
+                        languageChangedAt: remoteChangedAt
+                    });
+                }
+                return;
             }
-            editor.addContentWidget(cursorWidgetsRef.current[localProfile.currentLanguage]);
-        }
 
-        // update cursor widget's position
-        const currentWidget = cursorWidgetsRef.current[localProfile.currentLanguage];
-        currentWidget.setPosition(remoteProfile.editors[localProfile.currentLanguage].position);
-        editor.layoutContentWidget(currentWidget);
-        currentWidget.show(1000); // hide after 1 second
-    }, [remoteProfile.editors]);
+            const newPos = remoteProfile.editors[localProfile.currentLanguage]?.position;
+            if (!newPos) return;
+
+            const lastPos = lastRemoteCursorPosRef.current[connectionId];
+            if (lastPos && lastPos.lineNumber === newPos.lineNumber && lastPos.column === newPos.column) return;
+            lastRemoteCursorPosRef.current[connectionId] = newPos;
+
+            // Ensure cursor widgets map exists for this connection
+            if (!cursorWidgetsRef.current[connectionId]) {
+                cursorWidgetsRef.current[connectionId] = {};
+            }
+
+            // Ensure cursor widget exists for current language and connection
+            if (!(localProfile.currentLanguage in cursorWidgetsRef.current[connectionId])) {
+                const widget = new CursorWidget(
+                    remoteProfile.displayName,
+                    newPos,
+                    connectionId // use connectionId for unique widget ID
+                );
+                cursorWidgetsRef.current[connectionId][localProfile.currentLanguage] = widget;
+                editor.addContentWidget(widget);
+            }
+
+            // Update cursor widget's position
+            const currentWidget = cursorWidgetsRef.current[connectionId][localProfile.currentLanguage];
+            currentWidget.setPosition(newPos);
+            editor.layoutContentWidget(currentWidget);
+            currentWidget.show(1000); // hide after 1 second
+        });
+    }, [remoteProfiles]);
 
     // Load the runtime
     useEffect(() => {
