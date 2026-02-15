@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { generateId } from "zoo-ids";
+import adapter from 'webrtc-adapter';
 
 import { ANIMAL_NAMES } from "@/constants/constants";
 
@@ -30,9 +31,12 @@ function getRemoteAudioElementId(connectionId: string): string {
   return `remote-audio-${connectionId}`;
 }
 
+const isSafari = adapter.browserDetails.browser.toLowerCase() === "safari"
+
 export {
   cn,
   generateAvatarAndDisplayName,
   getRemoteVideoElementId,
-  getRemoteAudioElementId
+  getRemoteAudioElementId,
+  isSafari
 };
