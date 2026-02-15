@@ -378,7 +378,17 @@ const RTCPeerConnectionState = {
     NEW: "new",
 } as const;
 
+const RTCPeerConnectionSignalingState = {
+    CLOSED: "closed",
+    HAVE_LOCAL_OFFER: "have-local-offer",
+    HAVE_LOCAL_PRANSWER: "have-local-pranswer",
+    HAVE_REMOTE_OFFER: "have-remote-offer",
+    HAVE_REMOTE_PRANSWER: "have-remote-pranswer",
+    STABLE: "stable",
+} as const;
+
 export {
     servers,
-    RTCPeerConnectionState
+    RTCPeerConnectionState,
+    RTCPeerConnectionSignalingState
 }

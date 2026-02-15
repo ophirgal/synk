@@ -1,6 +1,6 @@
 import { LOCAL_VIDEO_ELEMENT_ID } from "@/constants/constants";
 import { getRemoteVideoElementId, getRemoteAudioElementId } from "@/lib/utils";
-import { RTCPeerConnectionState, servers } from "./constants";
+import { RTCPeerConnectionSignalingState, RTCPeerConnectionState, servers } from "./constants";
 
 type WebRTCConnection = {
     peerConnection: RTCPeerConnection,
@@ -261,7 +261,8 @@ class WebRTCConnectionProvider {
 
     async setRemoteAnswer(connectionId: string, answer: RTCSessionDescriptionInit): Promise<void> {
         const conn = this.connections[connectionId];
-        if (conn && conn.peerConnection && !conn.peerConnection.currentRemoteDescription) {
+        if (conn && conn.peerConnection &&
+            conn.peerConnection.signalingState === RTCPeerConnectionSignalingState.HAVE_LOCAL_OFFER) {
             await conn.peerConnection.setRemoteDescription(answer);
         }
     };

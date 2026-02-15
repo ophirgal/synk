@@ -6,6 +6,8 @@ import type { WebRTCConnectionProvider } from "@/lib/webrtc";
 export class FirebaseRoomService implements RoomService {
     private db = getDatabase(app);
     private webRTCConnectionProvider: WebRTCConnectionProvider | null = null;
+    private processedAnswers = new Set<string>();
+    private processedCandidateIndices = new Map<string, number>();
 
     constructor(provider: WebRTCConnectionProvider) {
         this.webRTCConnectionProvider = provider;
@@ -22,7 +24,7 @@ export class FirebaseRoomService implements RoomService {
 
         // Listen for Room Updates (ICE candidates from peer).
         // We listen for offers and then add answers for them.
-        const unsubscribe = this.listenForRoomUpdates(newRoomId, async (room: Room) => {
+        this.listenForRoomUpdates(newRoomId, async (room: Room) => {
             // console.log('[DEBUG]: creator received room updates:', room);
             // console.log("[DEBUG]: PeerConnection:", getPeerConnection());
 
@@ -34,8 +36,6 @@ export class FirebaseRoomService implements RoomService {
                     await this.answerOfferredConnection(newRoomId, connectionId, connection, onConnected, onDataChannelReady);
                 }
             }
-
-            unsubscribe();
         });
 
         return newRoomId;
@@ -45,7 +45,7 @@ export class FirebaseRoomService implements RoomService {
         const connectionRef = ref(this.db, `rooms/${newRoomId}/connections/${connectionId}`);
         // ensure connection cleanup when user disconnects
         onDisconnect(connectionRef).remove();
-        // Create SDP answer
+        // Create SDP answer and set remote description with offer from offering peer
         const answer = await this.webRTCConnectionProvider!.createAnswerForConnection(
             connectionId,
             connection.offer,
@@ -63,10 +63,14 @@ export class FirebaseRoomService implements RoomService {
         // Save answer to connection in database
         update(connectionRef, { answer });
 
-        // Add any ICE candidates from the offering peer
+        // Process all NEW ICE candidates from the offering peer
         if (connection.offerIceCandidates?.length > 0) {
-            const lastCandidate = connection.offerIceCandidates.slice(-1)[0];
-            await this.webRTCConnectionProvider!.addRemoteIceCandidate(connectionId, lastCandidate);
+            const lastProcessedIndex = this.processedCandidateIndices.get(`offer:${connectionId}`) ?? -1;
+            const newCandidates = connection.offerIceCandidates.slice(lastProcessedIndex + 1);
+            for (const candidate of newCandidates) {
+                await this.webRTCConnectionProvider!.addRemoteIceCandidate(connectionId, candidate);
+            }
+            this.processedCandidateIndices.set(`offer:${connectionId}`, connection.offerIceCandidates.length - 1);
         }
     }
 
@@ -111,36 +115,52 @@ export class FirebaseRoomService implements RoomService {
         }
 
         // Listen for Room Updates (answer & ICE candidates from peer)
-        const unsubscribe = this.listenForRoomUpdates(roomId, async (room: Room) => {
+        this.listenForRoomUpdates(roomId, async (room: Room) => {
             // console.log('[DEBUG]: joiner received room updates:', room);
             // console.log("[DEBUG]: PeerConnection:", getPeerConnection());
-            for (const connectionId in room.connections) {
-                const connection = room.connections[connectionId];
-                if (connection.offeringPeerId === joinerParticipantId && connection.answer) {
-                    // Set Remote Description if needed
-                    await this.processAnsweredConnection(roomId, connectionId, connection);
-                } else if (connection.answeringPeerId === joinerParticipantId && !connection.answer) {
-                    await this.answerOfferredConnection(roomId, connectionId, connection, onConnected, onDataChannelReady);
+            try {
+                for (const connectionId in room.connections) {
+                    const connection = room.connections[connectionId];
+                    if (connection.offeringPeerId === joinerParticipantId && connection.answer) {
+                        // Set Remote Description if needed
+                        await this.processAnsweredConnection(roomId, connectionId, connection);
+                    } else if (connection.answeringPeerId === joinerParticipantId && !connection.answer) {
+                        await this.answerOfferredConnection(roomId, connectionId, connection, onConnected, onDataChannelReady);
+                    }
                 }
-            }
+            } catch (error) {
+                const conns = this.webRTCConnectionProvider!.getConnections()
+                for (let c in conns) {
+                    console.log(c, conns[c].peerConnection);
+                }
 
-            unsubscribe();
+                console.error(error);
+            }
         });
     }
 
     private async processAnsweredConnection(roomId: string, connectionId: string, connection: Connection) {
-        // ensure connection cleanup when user disconnects 
-        const connectionRef = ref(this.db, `rooms/${roomId}/connections/${connectionId}`);
-        onDisconnect(connectionRef).remove();
-        // Set Remote Description if needed
-        if (!this.webRTCConnectionProvider!.isRemoteDescriptionSet(connectionId)) {
-            await this.webRTCConnectionProvider!.setRemoteAnswer(connectionId, connection.answer);
+        // ensure connection cleanup when user disconnects (only once)
+        if (!this.processedAnswers.has(connectionId)) {
+            const connectionRef = ref(this.db, `rooms/${roomId}/connections/${connectionId}`);
+            onDisconnect(connectionRef).remove();
         }
-        // Add the latest ICE candidate from the peer
+
+        // Set Remote Description if needed (only once)
+        if (!this.processedAnswers.has(connectionId) &&
+            !this.webRTCConnectionProvider!.isRemoteDescriptionSet(connectionId)) {
+            await this.webRTCConnectionProvider!.setRemoteAnswer(connectionId, connection.answer);
+            this.processedAnswers.add(connectionId);
+        }
+
+        // Process all NEW ICE candidates from the peer
         if (connection.answerIceCandidates?.length > 0) {
-            // toast(`[DEBUG]: Received ICE candidate ${room.answerIceCandidates.length - 1} from joiner peer`);
-            const lastCandidate = connection.answerIceCandidates.slice(-1)[0];
-            await this.webRTCConnectionProvider!.addRemoteIceCandidate(connectionId, lastCandidate);
+            const lastProcessedIndex = this.processedCandidateIndices.get(`answer:${connectionId}`) ?? -1;
+            const newCandidates = connection.answerIceCandidates.slice(lastProcessedIndex + 1);
+            for (const candidate of newCandidates) {
+                await this.webRTCConnectionProvider!.addRemoteIceCandidate(connectionId, candidate);
+            }
+            this.processedCandidateIndices.set(`answer:${connectionId}`, connection.answerIceCandidates.length - 1);
         }
     }
 
