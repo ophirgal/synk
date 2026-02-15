@@ -51,7 +51,7 @@ export default function TextEditor() {
             }));
         });
 
-        // Rebind MonacoBinding when yText changes (language switch)
+        // Rebind MonacoBinding when yText changes
         bindingRef.current = new MonacoBinding(
             yDoc.getText(TEXT_EDITOR_YTEXT_ID),
             model,

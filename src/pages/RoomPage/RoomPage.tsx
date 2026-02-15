@@ -85,7 +85,7 @@ function RoomContent() {
             setCurrentRoomId(roomId);
             navigate(`/rooms/${roomId}`);
             toast.success(`Room created successfully!`);
-            copyRoomLink(roomId, localProfile.currentLanguage)
+            copyRoomLink(roomId)
         } catch (error) {
             console.error('Error creating room:', error);
             toast.error(String(error));

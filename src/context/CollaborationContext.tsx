@@ -8,13 +8,13 @@ import {
     useSyncExternalStore,
     useMemo
 } from 'react';
-import { useParams, useSearchParams } from 'react-router';
+import { useParams } from 'react-router';
 import * as Y from 'yjs';
 
 import { WebRTCDataProvider, type Profile, type Editors, WebRTCConnectionProvider, type WebRTCConnection } from '@/lib/webrtc';
 import { runtimeRegistry } from '@/lib/runtimes';
 import { generateAvatarAndDisplayName } from '@/lib/utils';
-import { CURRENT_LANGUAGE_SEARCH_PARAM, TEXT_EDITOR_DEFAULT_TEXT, TEXT_EDITOR_YTEXT_ID } from '@/constants/constants';
+import { TEXT_EDITOR_DEFAULT_TEXT, TEXT_EDITOR_YTEXT_ID } from '@/constants/constants';
 
 export type RemoteProfiles = { [connectionId: string]: Profile };
 
@@ -35,7 +35,6 @@ const CollaborationContext = createContext<CollaborationContextType | null>(null
 export function CollaborationProvider({ children }: { children: ReactNode }) {
     const [isConnected, setIsConnected] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
-    const [_, setSearchParams] = useSearchParams();
     const [avatar, displayName] = generateAvatarAndDisplayName()
     const [localProfile, setLocalProfile] = useState<Profile>(createInitialProfile(avatar, displayName));
     const [remoteProfiles, setRemoteProfiles] = useState<RemoteProfiles>({});
@@ -133,11 +132,8 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
 
     // Send local profile updates
     useEffect(() => {
-        // alert("USE-EFFECT-TRIGGERED !!!\n\nproviderRef.current is: " + JSON.stringify(providerRef.current))
         if (!providerRef.current) return;
-        // alert("sending local profile update: " + JSON.stringify(localProfile))
         providerRef.current.sendProfileUpdate(localProfile);
-        setSearchParams(params => ({ ...params, [CURRENT_LANGUAGE_SEARCH_PARAM]: localProfile.currentLanguage }), { replace: true });
     }, [localProfile]);
 
     return (
@@ -181,12 +177,7 @@ function createInitialProfile(
     })
 
     const pathParams = useParams(); // check if id path variable exists (joining an existing room)
-    const [searchParams, _] = useSearchParams();
-
     const isRoomCreator = !pathParams.id
-    if (!isRoomCreator) {
-        currentLanguage = searchParams.get(CURRENT_LANGUAGE_SEARCH_PARAM) ?? currentLanguage;
-    }
 
     return {
         avatar,

@@ -16,8 +16,6 @@ const ANIMAL_NAMES = Object.keys(animalImageMap)
 
 const SMALL_SCREEN_WIDTH = 640
 
-const CURRENT_LANGUAGE_SEARCH_PARAM = 'currentLanguage'
-
 export {
     navLinks,
     LOCAL_VIDEO_ELEMENT_ID,
@@ -25,5 +23,4 @@ export {
     TEXT_EDITOR_DEFAULT_TEXT,
     ANIMAL_NAMES,
     SMALL_SCREEN_WIDTH,
-    CURRENT_LANGUAGE_SEARCH_PARAM,
 }
