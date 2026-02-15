@@ -13,6 +13,7 @@ class WebRTCConnectionProvider {
     private connections: { [key: string]: WebRTCConnection } = {};
     private localStream: MediaStream | null = null;
     private listeners = new Set<() => void>();
+    private settingRemoteDesc = new Set<string>();
 
     subscribe = (listener: () => void) => {
         this.listeners.add(listener);
@@ -201,7 +202,7 @@ class WebRTCConnectionProvider {
         onDataChannelReady: (connectionId: string, channel: RTCDataChannel) => void
     ): Promise<RTCSessionDescriptionInit> {
         if (this.connections[connectionId]?.peerConnection) { // connection was created, return local description as answer
-            return this.connections[connectionId].peerConnection.localDescription!;
+            return this.connections[connectionId].peerConnection.currentLocalDescription!;
         }
         const conn: WebRTCConnection = { peerConnection: new RTCPeerConnection(servers), state: RTCPeerConnectionState.CONNECTING };
         this.connections[connectionId] = conn;
@@ -260,10 +261,20 @@ class WebRTCConnectionProvider {
     };
 
     async setRemoteAnswer(connectionId: string, answer: RTCSessionDescriptionInit): Promise<void> {
-        const conn = this.connections[connectionId];
-        if (conn && conn.peerConnection &&
-            conn.peerConnection.signalingState === RTCPeerConnectionSignalingState.HAVE_LOCAL_OFFER) {
-            await conn.peerConnection.setRemoteDescription(answer);
+        // using Set membership to prevent race condition with other async calls to setRemoteAnswer
+        if (this.settingRemoteDesc.has(connectionId)) return;
+        this.settingRemoteDesc.add(connectionId);
+        
+        try {
+            const conn = this.connections[connectionId];
+            if (conn?.peerConnection && !this.isRemoteDescriptionSet(connectionId) &&
+                conn.peerConnection.signalingState === RTCPeerConnectionSignalingState.HAVE_LOCAL_OFFER) {
+                console.log("Before await", conn.peerConnection.signalingState);
+                await conn.peerConnection.setRemoteDescription(answer);
+                console.log("After await", conn.peerConnection.signalingState);
+            }
+        } finally {
+            this.settingRemoteDesc.delete(connectionId);
         }
     };
 

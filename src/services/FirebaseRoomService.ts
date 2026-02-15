@@ -14,15 +14,17 @@ export class FirebaseRoomService implements RoomService {
     }
 
     async createRoom(participant: Participant, onConnected: () => void, onDataChannelReady: (connectionId: string, channel: RTCDataChannel) => void): Promise<string> {
+        // Create Room in Database
         const newRoomRef = push(ref(this.db, 'rooms'));
         const newRoomId = newRoomRef.key;
+        // Create 1st participant in room
         const creatorParticipantRef = push(ref(this.db, `rooms/${newRoomId}/participants`));
         const creatorParticipantId = creatorParticipantRef.key;
         await set(creatorParticipantRef, participant);
-        // remove participant when user disconnects 
+        // ensure participant is removed from database when user disconnects 
         onDisconnect(creatorParticipantRef).remove();
 
-        // Listen for Room Updates (ICE candidates from peer).
+        // Listen for Room Updates (ICE candidates from joining peers).
         // We listen for offers and then add answers for them.
         this.listenForRoomUpdates(newRoomId, async (room: Room) => {
             // console.log('[DEBUG]: creator received room updates:', room);
@@ -33,7 +35,7 @@ export class FirebaseRoomService implements RoomService {
                 const connection = room.connections[connectionId];
                 if (connection.answeringPeerId === creatorParticipantId && !connection.answer) {
                     // Create SDP answer, Set up ICE candidate handling, and Set Remote Description
-                    await this.answerOfferredConnection(newRoomId, connectionId, connection, onConnected, onDataChannelReady);
+                    await this.answerOfferedConnection(newRoomId, connectionId, connection, onConnected, onDataChannelReady);
                 }
             }
         });
@@ -41,7 +43,7 @@ export class FirebaseRoomService implements RoomService {
         return newRoomId;
     }
 
-    private async answerOfferredConnection(newRoomId: string, connectionId: string, connection: Connection, onConnected: () => void, onDataChannelReady: (connectionId: string, channel: RTCDataChannel) => void) {
+    private async answerOfferedConnection(newRoomId: string, connectionId: string, connection: Connection, onConnected: () => void, onDataChannelReady: (connectionId: string, channel: RTCDataChannel) => void) {
         const connectionRef = ref(this.db, `rooms/${newRoomId}/connections/${connectionId}`);
         // ensure connection cleanup when user disconnects
         onDisconnect(connectionRef).remove();
@@ -85,10 +87,10 @@ export class FirebaseRoomService implements RoomService {
         const joinerParticipantRef = push(ref(this.db, `rooms/${roomId}/participants`));
         const joinerParticipantId = joinerParticipantRef.key;
         set(joinerParticipantRef, participant);
-        // remove participant when user disconnects
+        // ensure participant is removed when user disconnects
         onDisconnect(joinerParticipantRef).remove();
 
-        // Only once (upon first join) create connections.
+        // Create connections only once (when joining).
         // for each participant: create connection with SDP offer and set up ICE candidate handling
         for (const participantId in room.participants) {
             const connectionRef = push(ref(this.db, `rooms/${roomId}/connections`));
@@ -125,7 +127,7 @@ export class FirebaseRoomService implements RoomService {
                         // Set Remote Description if needed
                         await this.processAnsweredConnection(roomId, connectionId, connection);
                     } else if (connection.answeringPeerId === joinerParticipantId && !connection.answer) {
-                        await this.answerOfferredConnection(roomId, connectionId, connection, onConnected, onDataChannelReady);
+                        await this.answerOfferedConnection(roomId, connectionId, connection, onConnected, onDataChannelReady);
                     }
                 }
             } catch (error) {
@@ -136,14 +138,14 @@ export class FirebaseRoomService implements RoomService {
 
     private async processAnsweredConnection(roomId: string, connectionId: string, connection: Connection) {
         // ensure connection cleanup when user disconnects (only once)
-        if (!this.processedAnswers.has(connectionId)) {
+        const isConnectionProcessed = this.processedAnswers.has(connectionId)
+        if (!isConnectionProcessed) {
             const connectionRef = ref(this.db, `rooms/${roomId}/connections/${connectionId}`);
             onDisconnect(connectionRef).remove();
         }
 
         // Set Remote Description if needed (only once)
-        if (!this.processedAnswers.has(connectionId) &&
-            !this.webRTCConnectionProvider!.isRemoteDescriptionSet(connectionId)) {
+        if (!isConnectionProcessed && !this.webRTCConnectionProvider!.isRemoteDescriptionSet(connectionId)) {
             await this.webRTCConnectionProvider!.setRemoteAnswer(connectionId, connection.answer);
             this.processedAnswers.add(connectionId);
         }
