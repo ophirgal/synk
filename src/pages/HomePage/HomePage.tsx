@@ -8,6 +8,7 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion"
 
+const isProbablySafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 const demoVideo = "/assets/videos/demo_video.webm"
 const demoImage = "/assets/demo_image.png"
 
@@ -138,7 +139,10 @@ function HeroSection() {
                 [synk] Up!
             </a>
         </div>
-        <video src={demoVideo} className="hidden lg:block flex-1 w-100 scale-150 md:pr-25 md:pl-5" autoPlay loop muted playsInline />
+        {isProbablySafari ? 
+         <img src={demoImage} className="hidden lg:block flex-1 w-100 scale-150 md:pr-25 md:pl-5" />
+         : <video src={demoVideo} className="hidden lg:block flex-1 w-100 scale-150 md:pr-25 md:pl-5" autoPlay loop muted playsInline />}
+        
     </section>
 
 }
