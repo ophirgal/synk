@@ -22,7 +22,7 @@ const pricingTiers = [
             "Live video & audio",
             "Shared text editor",
             "Shared code execution",
-            "Room creation via link",
+            "Room sharing via link",
         ],
         cta: "[synk] Up!",
         ctaHref: "/rooms",
