@@ -1,6 +1,6 @@
 {
   "projects": {
-    "prod": "synklive",
-    "dev": "synklive-dev"
+    "dev": "synklive-dev",
+    "prod": "synklive"
   }
 }
