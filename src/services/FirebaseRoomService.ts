@@ -129,11 +129,6 @@ export class FirebaseRoomService implements RoomService {
                     }
                 }
             } catch (error) {
-                const conns = this.webRTCConnectionProvider!.getConnections()
-                for (let c in conns) {
-                    console.log(c, conns[c].peerConnection);
-                }
-
                 console.error(error);
             }
         });
