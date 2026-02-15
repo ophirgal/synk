@@ -35,9 +35,9 @@ const pricingTiers = [
         description: "For developers who want more",
         features: [
             "Everything in Free",
-            "Unlimited session duration",
             "10+ programming languages",
-            "Session recording & playback",
+            "No participant limit",
+            "Custom room links",
             "Priority support",
         ],
         cta: "Coming Soon",
@@ -139,10 +139,10 @@ function HeroSection() {
                 [synk] Up!
             </a>
         </div>
-        {isProbablySafari ? 
-         <img src={demoImage} className="hidden lg:block flex-1 w-100 scale-150 md:pr-25 md:pl-5" />
-         : <video src={demoVideo} className="hidden lg:block flex-1 w-100 scale-150 md:pr-25 md:pl-5" autoPlay loop muted playsInline />}
-        
+        {isProbablySafari ?
+            <img src={demoImage} className="hidden lg:block flex-1 w-100 scale-150 md:pr-25 md:pl-5" />
+            : <video src={demoVideo} className="hidden lg:block flex-1 w-100 scale-150 md:pr-25 md:pl-5" autoPlay loop muted playsInline />}
+
     </section>
 
 }
