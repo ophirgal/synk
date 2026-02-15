@@ -269,9 +269,7 @@ class WebRTCConnectionProvider {
             const conn = this.connections[connectionId];
             if (conn?.peerConnection && !this.isRemoteDescriptionSet(connectionId) &&
                 conn.peerConnection.signalingState === RTCPeerConnectionSignalingState.HAVE_LOCAL_OFFER) {
-                console.log("Before await", conn.peerConnection.signalingState);
                 await conn.peerConnection.setRemoteDescription(answer);
-                console.log("After await", conn.peerConnection.signalingState);
             }
         } finally {
             this.settingRemoteDesc.delete(connectionId);

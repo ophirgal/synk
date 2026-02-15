@@ -56,7 +56,6 @@ export default function CodeEditor() {
     };
 
     const handleDecreaseFontSize = () => {
-        console.log("font size", fontSize);
         setFontSize((prevFontSize) => Math.max(prevFontSize - 1, 7));
     };
 
