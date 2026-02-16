@@ -116,7 +116,7 @@ export default function HomePage() {
 }
 
 function HeroSection() {
-    return <section className="flex items-center justify-center min-h-[calc(100vh-140px)] 2xl:px-25">
+    return <section className="flex items-center justify-center overflow-hidden min-h-[100vh] 2xl:px-25">
         <div className="flex-1 max-w-4xl mx-auto p-8 sm:py-16 text-center">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 dark:text-gray-100">
                 Experience the future of collaborative coding.
