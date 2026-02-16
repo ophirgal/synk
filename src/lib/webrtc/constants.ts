@@ -361,7 +361,16 @@ const servers: RTCConfiguration = {
         },
         {
             urls: [
-                'turn:free.expressturn.com:3478'
+                'turn:relay1.expressturn.com:3478',
+                'turn:relay2.expressturn.com:3478',
+                'turn:relay3.expressturn.com:3478',
+                'turn:relay4.expressturn.com:3478',
+                'turn:relay5.expressturn.com:3478',
+                'turn:relay6.expressturn.com:3478',
+                'turn:relay7.expressturn.com:3478',
+                'turn:relay8.expressturn.com:3478',
+                'turn:relay9.expressturn.com:3478',
+                'turn:relay10.expressturn.com:3478',
             ],
             username: import.meta.env.VITE_FREE_EXPRESS_TURN_SERVER_USERNAME,
             credential: import.meta.env.VITE_FREE_EXPRESS_TURN_SERVER_CREDENTIAL,
