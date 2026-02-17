@@ -80,9 +80,9 @@ export class FirebaseRoomService implements RoomService {
         // Fetch room
         const room = await this.getRoomById(roomId);
         // block 3+ participants feature for now.
-        if (room.participants && Object.keys(room.participants).length === 2) {
-            throw new Error(`Room "${roomId}" is full`);
-        }
+        // if (room.participants && Object.keys(room.participants).length === 2) {
+        //     throw new Error(`Room "${roomId}" is full`);
+        // }
         // Add participant to room
         const joinerParticipantRef = push(ref(this.db, `rooms/${roomId}/participants`));
         const joinerParticipantId = joinerParticipantRef.key;

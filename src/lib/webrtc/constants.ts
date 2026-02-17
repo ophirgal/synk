@@ -57,6 +57,13 @@ const RTCPeerConnectionState = {
     NEW: "new",
 } as const;
 
+const ScratchTab = {
+    NOTES: 'notes',
+    WHITEBOARD: 'whiteboard',
+} as const;
+
+type ScratchTabType = typeof ScratchTab[keyof typeof ScratchTab];
+
 const RTCPeerConnectionSignalingState = {
     CLOSED: "closed",
     HAVE_LOCAL_OFFER: "have-local-offer",
@@ -69,5 +76,7 @@ const RTCPeerConnectionSignalingState = {
 export {
     servers,
     RTCPeerConnectionState,
-    RTCPeerConnectionSignalingState
+    RTCPeerConnectionSignalingState,
+    ScratchTab,
+    type ScratchTabType
 }

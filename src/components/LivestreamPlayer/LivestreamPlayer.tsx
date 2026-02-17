@@ -3,6 +3,7 @@ import { Camera, CameraOff, Mic, MicOff } from "lucide-react";
 
 import { type Profile } from "@/lib/webrtc";
 import { ReactAnimal, type ReactAnimalNames } from "@/components/ReactAnimal";
+import { cn } from "@/lib/utils";
 // import { Spinner } from "@/components/ui/spinner";
 // import { RTCPeerConnectionState } from "@/lib/webrtc";
 
@@ -14,6 +15,7 @@ interface LivestreamPlayerProps extends React.VideoHTMLAttributes<HTMLVideoEleme
     onMicToggle?: () => void,
     hidden?: boolean
     connectionState?: RTCPeerConnectionState
+    className?: string
 }
 
 const LivestreamPlayer: React.FC<LivestreamPlayerProps> = (props) => {
@@ -33,7 +35,7 @@ const LivestreamPlayer: React.FC<LivestreamPlayerProps> = (props) => {
 
     const avatarAnimal = props.profile.displayName.split(' ')[1] as ReactAnimalNames
 
-    return <div className={`relative max-h-[100%] w-full rounded bg-black/5 dark:bg-white/5 ${props.hidden ? "hidden" : ""}`}>
+    return <div className={cn("relative max-h-[100%] w-full rounded bg-black/5 dark:bg-white/5", props.className, props.className)}>
         {/* {(props.connectionState && props.connectionState !== RTCPeerConnectionState.CONNECTED) ?
             <><Spinner data-icon="inline-start" className="mr-1" /> Connecting...</>
             : */}

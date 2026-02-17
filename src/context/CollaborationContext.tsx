@@ -11,7 +11,14 @@ import {
 import { useParams } from 'react-router';
 import * as Y from 'yjs';
 
-import { WebRTCDataProvider, type Profile, type Editors, WebRTCConnectionProvider, type WebRTCConnection } from '@/lib/webrtc';
+import {
+    WebRTCDataProvider,
+    type Profile,
+    type Editors,
+    WebRTCConnectionProvider,
+    type WebRTCConnection,
+    ScratchTab
+} from '@/lib/webrtc';
 import { runtimeRegistry } from '@/lib/runtimes';
 import { generateAvatarAndDisplayName } from '@/lib/utils';
 import { TEXT_EDITOR_DEFAULT_TEXT, TEXT_EDITOR_YTEXT_ID } from '@/constants/constants';
@@ -67,6 +74,12 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
             if (newProfile.currentLanguage !== prev.currentLanguage &&
                 newProfile.languageChangedAt === prev.languageChangedAt) {
                 newProfile = { ...newProfile, languageChangedAt: Date.now() };
+            }
+
+            // Set timestamp when scratch tab changes (unless timestamp is explicitly provided)
+            if (newProfile.currentScratchTab !== prev.currentScratchTab &&
+                newProfile.scratchTabChangedAt === prev.scratchTabChangedAt) {
+                newProfile = { ...newProfile, scratchTabChangedAt: Date.now() };
             }
 
             return newProfile;
@@ -187,6 +200,8 @@ function createInitialProfile(
         isRoomCreator,
         currentLanguage,
         languageChangedAt: isRoomCreator ? Date.now() : 0,
+        currentScratchTab: ScratchTab.NOTES,
+        scratchTabChangedAt: isRoomCreator ? Date.now() : 0,
         activeEditor,
         editors: initialEditors,
     };

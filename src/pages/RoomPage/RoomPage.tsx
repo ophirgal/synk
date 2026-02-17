@@ -21,6 +21,7 @@ import {
     SheetDescription,
     SheetTrigger,
 } from "@/components/ui/sheet"
+import ScratchPanel from "@/components/ScratchPanel/ScratchPanel"
 import CodeEditor from "@/components/CodeEditor/CodeEditor"
 import LivestreamPlayer from "@/components/LivestreamPlayer/LivestreamPlayer"
 import { Button } from "@/components/ui/button"
@@ -28,7 +29,6 @@ import { createRoomService } from "@/services/RoomService"
 import { useRoom } from "@/hooks/useRoom"
 import { CollaborationProvider, useCollaboration } from "@/context/CollaborationContext"
 import { useTheme } from "@/context/ThemeContext"
-import TextEditor from "@/components/TextEditor/TextEditor"
 import { Spinner } from "@/components/ui/spinner"
 import useWindowSize from "@/hooks/useWindowSize"
 
@@ -157,9 +157,9 @@ function RoomContent() {
         <div className="hidden sm:flex flex-col border-t h-full">
             <RoomNavBar roomLink={roomLink} onCopyRoomLink={copyRoomLink} />
             <ResizablePanelGroup className="h-full" orientation="horizontal" dir={direction}>
-                {/* Text Editor Panel */}
-                <ResizablePanel collapsible className="h-full p-4" dir="ltr" defaultSize={25} minSize={'20%'} maxSize={'33.3%'}>
-                    <TextEditor />
+                {/* Scratch Panel (Notes & Whiteboard) */}
+                <ResizablePanel collapsible className="h-full p-4" dir="ltr" defaultSize={30} minSize={'20%'} maxSize={'45%'}>
+                    <ScratchPanel />
                 </ResizablePanel>
                 <ResizableHandle withHandle />
                 {/* Code Editor Panel */}
@@ -168,7 +168,7 @@ function RoomContent() {
                 </ResizablePanel>
                 {/* Video Panel */}
                 <ResizableHandle withHandle />
-                <ResizablePanel collapsible className="h-full flex flex-col justify-center items-center" dir="ltr" defaultSize={25} minSize={'15%'} maxSize={'33.3%'}>
+                <ResizablePanel collapsible className="h-full flex flex-col justify-center items-center" dir="ltr" defaultSize={30} minSize={'15%'} maxSize={'45%'}>
                     <div className="flex flex-col justify-center items-center gap-4 p-4 max-h-100 ">
                         {Object.entries(connections).map(([connId, conn]) => {
                             const remoteProfile = remoteProfiles[connId];

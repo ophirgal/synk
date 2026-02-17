@@ -11,8 +11,15 @@ import { useTheme } from "@/context/ThemeContext";
 import { TEXT_EDITOR_YTEXT_ID } from "@/constants/constants";
 import type { Profile } from "@/lib/webrtc";
 
+// add onEditorReady prop and fontSize prop and heading prop and withFontSizeButtons prop
+interface TextEditorProps {
+    onEditorReady?: () => void;
+    fontSize?: number;
+    heading?: string;
+    withFontSizeButtons?: boolean;
+}
 
-export default function TextEditor() {
+export default function TextEditor({ onEditorReady, fontSize: fontSizeProp, heading, withFontSizeButtons }: TextEditorProps) {
     const [fontSize, setFontSize] = useState(14);
     const [isEditorReady, setIsEditorReady] = useState(false);
     const editorRef = useRef<monaco.IStandaloneCodeEditor | null>(null);
@@ -59,6 +66,7 @@ export default function TextEditor() {
         );
 
         setIsEditorReady(true);
+        onEditorReady?.();
 
         return () => {
             bindingRef.current?.destroy();
@@ -100,9 +108,9 @@ export default function TextEditor() {
 
     return (
         <div className="flex flex-col h-full gap-2">
-            <div className="flex justify-between">
-                <h1 className="flex items-center">Notes</h1>
-                <div className="flex justify-end gap-2">
+            {(heading || withFontSizeButtons) && <div className="flex justify-end">
+                {heading && <h1 className="flex items-center">{heading}</h1>}
+                {withFontSizeButtons && <div className="flex justify-end gap-2">
                     <Button disabled={!isEditorReady} onClick={handleDecreaseFontSize} size="sm" className="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white">
                         <AArrowDown className="h-4 w-4" />
                     </Button>
@@ -110,7 +118,9 @@ export default function TextEditor() {
                         <AArrowUp className="h-4 w-42" />
                     </Button>
                 </div>
+                }
             </div>
+            }
             <div className="h-full border-1">
                 <MonacoEditor
                     onMount={handleEditorMount}
@@ -118,7 +128,7 @@ export default function TextEditor() {
                     options={{
                         padding: { top: 5 },
                         minimap: { enabled: false },
-                        fontSize: fontSize,
+                        fontSize: fontSizeProp ?? fontSize,
                         scrollBeyondLastLine: false,
                         automaticLayout: true,
                         // remove unnecessary editor rulers and lines

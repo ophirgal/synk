@@ -1,4 +1,5 @@
 import * as Y from 'yjs';
+import { type ScratchTabType } from './constants';
 
 type SyncMessage =
     | { type: 'sync-step-1'; stateVector: number[] }
@@ -18,6 +19,8 @@ export type Profile = {
     isRoomCreator: boolean;
     currentLanguage: string;
     languageChangedAt: number;
+    currentScratchTab: ScratchTabType;
+    scratchTabChangedAt: number;
     activeEditor?: string;
     editors: Editors;
 };

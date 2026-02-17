@@ -12,6 +12,9 @@ const LOCAL_VIDEO_ELEMENT_ID = "local-video"
 const TEXT_EDITOR_YTEXT_ID = "text-editor"
 const TEXT_EDITOR_DEFAULT_TEXT = "Free text goes here... [synk] away!"
 
+const WHITEBOARD_YELEMENTS_ID = "whiteboard-elements"
+const WHITEBOARD_YASSETS_ID = "whiteboard-assets"
+
 const ANIMAL_NAMES = Object.keys(animalImageMap)
 
 const SMALL_SCREEN_WIDTH = 640
@@ -23,4 +26,6 @@ export {
     TEXT_EDITOR_DEFAULT_TEXT,
     ANIMAL_NAMES,
     SMALL_SCREEN_WIDTH,
+    WHITEBOARD_YELEMENTS_ID,
+    WHITEBOARD_YASSETS_ID,
 }

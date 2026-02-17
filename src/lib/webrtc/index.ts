@@ -4,5 +4,7 @@ export {
     type WebRTCConnection
 } from './webrtc-media';
 export {
-    RTCPeerConnectionState
+    RTCPeerConnectionState,
+    ScratchTab,
+    type ScratchTabType,
 } from './constants'
