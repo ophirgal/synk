@@ -12,7 +12,7 @@ import { WHITEBOARD_YASSETS_ID, WHITEBOARD_YELEMENTS_ID } from "@/constants/cons
 import "@excalidraw/excalidraw/index.css";
 
 export default function Whiteboard() {
-    const [api, setApi] = useState<ExcalidrawImperativeAPI | null>(null);
+    const [excalAPI, setExcalAPI] = useState<ExcalidrawImperativeAPI | null>(null);
     const { yDoc, localProfile } = useCollaboration();
     const [binding, setBinding] = useState<ExcalidrawBinding | null>(null);
     const excalidrawRef = useRef<HTMLDivElement | null>(null);
@@ -22,7 +22,7 @@ export default function Whiteboard() {
     const yAssets = yDoc.getMap(WHITEBOARD_YASSETS_ID);
 
     useEffect(() => {
-        if (!api) return;
+        if (!excalAPI) return;
 
         const awareness = new Awareness(yDoc);
         awareness.setLocalStateField('user', {
@@ -34,18 +34,19 @@ export default function Whiteboard() {
         const binding = new ExcalidrawBinding(
             yElements,
             yAssets,
-            api,
+            excalAPI,
             awareness,
             // excalidraw dom is needed to override the undo/redo buttons in the UI as there is no way to override it via props in excalidraw
             // You might need to pass {trackedOrigins: new Set()} to undomanager depending on whether your provider sets an origin or not
             { excalidrawDom: excalidrawRef.current!, undoManager: new Y.UndoManager(yElements, { trackedOrigins: new Set() }) },
         );
         setBinding(binding);
+
         return () => {
             setBinding(null);
             binding.destroy();
         };
-    }, [api]);
+    }, [excalAPI]);
 
     return (
         <div className="flex flex-col h-full gap-2">
@@ -63,7 +64,12 @@ export default function Whiteboard() {
                         },
                         elements: yjsToExcalidraw(yElements)
                     }}
-                    excalidrawAPI={setApi}
+                    UIOptions={{
+                        tools: {
+                            image: false,
+                        }
+                    }}
+                    excalidrawAPI={setExcalAPI}
                     onPointerUpdate={binding?.onPointerUpdate}
                     isCollaborating
                 />
