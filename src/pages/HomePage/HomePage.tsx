@@ -19,10 +19,10 @@ const pricingTiers = [
         price: "$0",
         description: "Get started with real-time collaboration",
         features: [
-            "Code editor with syntax highlighting",
+            "Shared code editor",
             "Live video & audio",
-            "Shared text editor",
-            "Shared code execution",
+            "Shared notes section",
+            "Shared whiteboard",
             "Room sharing via link",
         ],
         cta: "[synk] Up!",
