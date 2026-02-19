@@ -65,7 +65,7 @@ const pricingTiers = [
 const faqItems = [
     {
         question: "What is [synk]?",
-        answer: "[synk] is a real-time collaborative coding platform that combines a code editor, shared text editor, and live video conferencing — all in your browser. No downloads, no accounts required. You can use it for teaching, work, interviews, or anything else you dream of!",
+        answer: "[synk] is a real-time collaborative coding platform that combines a code editor, whiteboarding, and live video conferencing — all in your browser. No downloads, no accounts required. You can use it for teaching, work, interviews, or anything else you dream of!",
     },
     {
         question: "Do I need to create an account?",
