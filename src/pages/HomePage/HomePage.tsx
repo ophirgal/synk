@@ -89,7 +89,7 @@ const faqItems = [
     },
     {
         question: "What programming languages are supported?",
-        answer: "[synk] currently supports Python and JavaScript, with more languages coming soon.",
+        answer: "[synk] currently supports Python, Java, and JavaScript, with more languages coming soon.",
     },
 ]
 
