@@ -1,7 +1,7 @@
 import app from "@/firebase";
 import { getDatabase, ref, get } from "firebase/database";
 
-const servers: RTCConfiguration = {
+const globalRTCConfiguration: RTCConfiguration = {
     iceServers: [
         {
             urls: [
@@ -74,7 +74,7 @@ const RTCPeerConnectionSignalingState = {
 } as const;
 
 export {
-    servers,
+    globalRTCConfiguration,
     RTCPeerConnectionState,
     RTCPeerConnectionSignalingState,
     ScratchTab,

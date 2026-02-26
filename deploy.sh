@@ -22,5 +22,4 @@ cp "$DOTENV_FILE" .env.local && \
 npm run build && \
 firebase use "$ENV" && \
 firebase deploy && \
-rm .env.local && \
 echo "[synk] was deployed successfully to '$ENV' environment."
