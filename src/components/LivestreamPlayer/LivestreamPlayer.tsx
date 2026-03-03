@@ -35,7 +35,7 @@ const LivestreamPlayer: React.FC<LivestreamPlayerProps> = (props) => {
 
     const avatarAnimal = props.profile.displayName.split(' ')[1] as ReactAnimalNames
 
-    return <div className={cn("relative max-h-[100%] w-full rounded bg-black/5 dark:bg-white/5", props.className, props.className)}>
+    return <div className={cn("relative flex-1 min-w-[200px] rounded bg-black/5 dark:bg-white/5", props.className, props.className)}>
         {/* {(props.connectionState && props.connectionState !== RTCPeerConnectionState.CONNECTED) ?
             <><Spinner data-icon="inline-start" className="mr-1" /> Connecting...</>
             : */}

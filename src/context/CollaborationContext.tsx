@@ -15,10 +15,12 @@ import {
     WebRTCDataProvider,
     type Profile,
     type Editors,
-    WebRTCConnectionProvider,
-    type WebRTCConnection,
+    // WebRTCConnectionProvider,
+    // type WebRTCConnection,
     ScratchTab
 } from '@/lib/webrtc';
+import { PeerJSConnectionProvider } from '@/lib/peerjs';
+import type { IConnectionProvider, PeerConnection } from '@/lib/peerjs';
 import { runtimeRegistry } from '@/lib/runtimes';
 import { generateAvatarAndDisplayName } from '@/lib/utils';
 import { TEXT_EDITOR_DEFAULT_TEXT, TEXT_EDITOR_YTEXT_ID } from '@/constants/constants';
@@ -33,8 +35,10 @@ interface CollaborationContextType {
     isConnected: boolean;
     isSynced: boolean;
     connectDataChannel: (connectionId: string, channel: RTCDataChannel) => void;
-    connectionProvider: WebRTCConnectionProvider;
-    connections: { [connectionId: string]: WebRTCConnection };
+    // connectionProvider: WebRTCConnectionProvider;
+    // connections: { [connectionId: string]: WebRTCConnection };
+    connectionProvider: IConnectionProvider;
+    connections: Record<string, PeerConnection>;
 }
 
 const CollaborationContext = createContext<CollaborationContextType | null>(null);
@@ -45,8 +49,10 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     const [avatar, displayName] = generateAvatarAndDisplayName()
     const [localProfile, setLocalProfile] = useState<Profile>(createInitialProfile(avatar, displayName));
     const [remoteProfiles, setRemoteProfiles] = useState<RemoteProfiles>({});
-    const connectionProvider = useMemo<WebRTCConnectionProvider>(() => new WebRTCConnectionProvider(), []);
+    // const connectionProvider = useMemo<WebRTCConnectionProvider>(() => new WebRTCConnectionProvider(), []);
+    const connectionProvider = useMemo<IConnectionProvider>(() => new PeerJSConnectionProvider(), []);
     const connections = useSyncExternalStore(connectionProvider.subscribe, connectionProvider.getSnapshot);
+
 
     const yDocRef = useRef<Y.Doc>(new Y.Doc());
     const providerRef = useRef<WebRTCDataProvider | null>(null);

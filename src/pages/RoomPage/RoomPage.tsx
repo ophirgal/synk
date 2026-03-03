@@ -76,7 +76,7 @@ function RoomContent() {
         isCreateRoomAttemptedRef.current = true;
 
         try {
-            const participant: Participant = { avatar: localProfile.avatar, displayName: localProfile.displayName };
+            const participant: Participant = { avatar: localProfile.avatar, displayName: localProfile.displayName, peerId: "" };
             const roomId = await roomService.createRoom(
                 participant,
                 handleConnectionSuccess,
@@ -105,7 +105,7 @@ function RoomContent() {
 
         try {
 
-            const participant: Participant = { avatar: localProfile.avatar, displayName: localProfile.displayName };
+            const participant: Participant = { avatar: localProfile.avatar, displayName: localProfile.displayName, peerId: "" };
             await roomService.joinRoom(
                 roomId,
                 participant,
@@ -131,8 +131,9 @@ function RoomContent() {
     // Initialize the Room
     useEffect(() => {
         (async () => {
-            // IMPORTANT: must ensure local stream before creating/joining room!
-            await connectionProvider.ensureLocalStream(false, false) // cam & mic turned off until user action
+            // IMPORTANT: init() acquires local stream AND creates the PeerJS Peer instance.
+            // Must complete before createRoom / joinRoom.
+            await connectionProvider.init(false, false) // cam & mic turned off until user action
             if (pathParams.id) {
                 setCurrentRoomId(pathParams.id)
                 await joinRoom(pathParams.id)
@@ -169,15 +170,16 @@ function RoomContent() {
                 {/* Video Panel */}
                 <ResizableHandle withHandle />
                 <ResizablePanel collapsible className="h-full flex flex-col justify-center items-center" dir="ltr" defaultSize={30} minSize={'15%'} maxSize={'45%'}>
-                    <div className="flex flex-col justify-center items-center gap-4 p-4 max-h-100 ">
-                        {Object.entries(connections).map(([connId, conn]) => {
+                    <div className="flex flex-wrap justify-center items-center gap-4 p-4 overflow-y-auto">
+                        {Object.entries(connections).map(([connId, _]) => {
                             const remoteProfile = remoteProfiles[connId];
                             if (!remoteProfile) return null;
                             return (
-                                <LivestreamPlayer key={connId} id={getRemoteVideoElementId(connId)} poster={avatarPlaceholder}
-                                    autoPlay playsInline withControls connectionState={conn.state}
-                                    profile={remoteProfile}
-                                />
+                                    <LivestreamPlayer key={connId} id={getRemoteVideoElementId(connId)} poster={avatarPlaceholder}
+                                        autoPlay playsInline withControls
+                                        // connectionState={conn.state}
+                                        profile={remoteProfile}
+                                    />
                             );
                         })}
                         <LivestreamPlayer id={LOCAL_VIDEO_ELEMENT_ID} poster={avatarPlaceholder}
