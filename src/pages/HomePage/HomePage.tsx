@@ -37,7 +37,7 @@ const pricingTiers = [
         features: [
             "Everything in Free",
             "10+ programming languages",
-            "No participant limit",
+            "Session Recording",
             "Custom room links",
             "Priority support",
         ],
@@ -77,7 +77,7 @@ const faqItems = [
     },
     {
         question: "How many people can join a room?",
-        answer: "Our free tier supports up to 2 participants for 1-on-1 collaboration. We're working on Pro and Enterprise tiers with additional features.",
+        answer: "Our free tier reliably supports about 5 participants per session. We're working on Pro and Enterprise tiers with additional features.",
     },
     {
         question: "Is [synk] free to use?",
