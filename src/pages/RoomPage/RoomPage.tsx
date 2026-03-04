@@ -144,6 +144,7 @@ function RoomContent() {
     }, [])
 
     // Update remote video and audio elements when peer joins or updates their profile.
+    // It re-runs when remoteProfiles or connections change (`connections` changes when a real media stream arrives).
     useEffect(() => {
         Object.keys(connectionProvider.getConnections()).forEach(connectionId => {
             const remoteProfile = remoteProfiles[connectionId];
@@ -152,7 +153,7 @@ function RoomContent() {
                 connectionProvider.toggleRemoteVideoAndAudioSources(connectionId, remoteProfile.isCameraOn, remoteProfile.isMicrophoneOn)
             }
         })
-    }, [remoteProfiles])
+    }, [remoteProfiles, connections])
 
     return (
         <div className="hidden sm:flex flex-col border-t h-full">

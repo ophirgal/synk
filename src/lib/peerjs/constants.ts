@@ -19,6 +19,13 @@ export async function buildPeerOptions(): Promise<PeerOptions> {
     const username = usernameSnap.val() as string;
     const credential = credentialSnap.val() as string;
 
+    const signalingServerOpts = {
+        host: import.meta.env.VITE_SIGNALING_SERVER_HOST,
+        port: import.meta.env.VITE_SIGNALING_SERVER_PORT,
+        path: import.meta.env.VITE_SIGNALING_SERVER_PATH,
+        secure: import.meta.env.VITE_SIGNALING_SERVER_SECURE,
+    }
+
     return {
         config: {
             iceServers: [
@@ -94,5 +101,6 @@ export async function buildPeerOptions(): Promise<PeerOptions> {
             iceTransportPolicy: "all",
         },
         debug: import.meta.env.DEV ? 2 : 0,
+        ...signalingServerOpts,
     };
 }

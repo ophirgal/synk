@@ -124,7 +124,11 @@ export class PeerJSConnectionProvider implements IConnectionProvider {
         ) as HTMLVideoElement | null;
 
         if (videoEl) {
-            videoEl.srcObject = isVideoSrc ? remoteStream : null;
+            if (isVideoSrc && videoEl.srcObject !== remoteStream) {
+                videoEl.srcObject = remoteStream;
+            } else if (!isVideoSrc && videoEl.srcObject) {
+                videoEl.srcObject = null;
+            }
         }
 
         // Hidden audio element for when the peer has audio but no video
@@ -132,7 +136,7 @@ export class PeerJSConnectionProvider implements IConnectionProvider {
         // Only pipe to audio element when video element is not showing the stream
         if (!isVideoSrc && isMicSrc) {
             audioEl.srcObject = remoteStream;
-        } else {
+        } else if (!isVideoSrc && audioEl.srcObject) {
             audioEl.srcObject = null;
         }
     }
@@ -232,8 +236,27 @@ export class PeerJSConnectionProvider implements IConnectionProvider {
             ? peer.call(remotePeerId, this.localStream)
             : null;
 
+        this.watchPeerConnection(dataConn.peerConnection, dataConn.peer);
+
         this.registerPeer(remotePeerId, mediaConn);
         this.wireDataConnection(remotePeerId, dataConn, onDataChannelReady, onConnected);
+    }
+
+    /**
+     * Listens to connection state changes on the given PeerConnection and removes the peer with the given id when the connection is closed, failed, or disconnected.
+     * @param {RTCPeerConnection} pc - The PeerConnection to listen to.
+     * @param {string} peerId - The id of the peer to remove when the connection is closed.
+     */
+    watchPeerConnection(pc: RTCPeerConnection, peerId: string): void {
+        pc.onconnectionstatechange = () => {
+            if (
+                pc.connectionState === 'disconnected' ||
+                pc.connectionState === 'failed' ||
+                pc.connectionState === 'closed'
+            ) {
+                this.removePeer(peerId);
+            }
+        };
     }
 
     // ── Inbound connection acceptance ─────────────────────────────────────

@@ -36,21 +36,11 @@ export class PeerJSRoomService implements RoomService {
         onConnected: () => void,
         onDataChannelReady: (connectionId: string, channel: RTCDataChannel) => void
     ): Promise<string> {
-        const ownPeerId = this.provider.getPeer().id;
-
         // Create the room and register self as first participant
         const newRoomRef = push(ref(this.db, "rooms"));
         const roomId = newRoomRef.key!;
 
-        const selfRef = push(ref(this.db, `rooms/${roomId}/participants`));
-        await set(selfRef, {
-            avatar: participant.avatar,
-            displayName: participant.displayName,
-            peerId: ownPeerId,
-        } satisfies Participant);
-
-        // Auto-remove self from Firebase when tab closes
-        onDisconnect(selfRef).remove();
+        await this.registerSelf(roomId, participant);
 
         // Accept all inbound connections — joiners will initiate to us
         this.listenForIncomingConnections(onConnected, onDataChannelReady);
@@ -74,15 +64,7 @@ export class PeerJSRoomService implements RoomService {
 
         const existing = snap.val() as Record<string, Participant>;
 
-        // Register self in Firebase
-        const selfRef = push(ref(this.db, `rooms/${roomId}/participants`));
-        await set(selfRef, {
-            avatar: participant.avatar,
-            displayName: participant.displayName,
-            peerId: ownPeerId,
-        } satisfies Participant);
-
-        onDisconnect(selfRef).remove();
+        await this.registerSelf(roomId, participant);
 
         // Initiate PeerJS connections to every participant already in the room
         for (const entry of Object.values(existing)) {
@@ -92,6 +74,17 @@ export class PeerJSRoomService implements RoomService {
 
         // Accept inbound connections from participants who join after us
         this.listenForIncomingConnections(onConnected, onDataChannelReady);
+    }
+
+    private async registerSelf(roomId: string, participant: Participant): Promise<void> {
+        const ownPeerId = this.provider.getPeer().id;
+        const selfRef = push(ref(this.db, `rooms/${roomId}/participants`));
+        await set(selfRef, {
+            avatar: participant.avatar,
+            displayName: participant.displayName,
+            peerId: ownPeerId,
+        } satisfies Participant);
+        onDisconnect(selfRef).remove();
     }
 
     /**
@@ -116,10 +109,12 @@ export class PeerJSRoomService implements RoomService {
                 onDataChannelReady,
                 onConnected
             );
+            this.provider.watchPeerConnection(dataConn.peerConnection, dataConn.peer);
         });
 
         peer.on("call", (mediaConn: MediaConnection) => {
             this.provider.acceptMediaConnection(mediaConn.peer, mediaConn);
+            this.provider.watchPeerConnection(mediaConn.peerConnection, mediaConn.peer);
         });
     }
 }

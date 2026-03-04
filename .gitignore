@@ -32,3 +32,5 @@ firestore-debug.log
 ui-debug.log
 
 .claude
+
+*.pem
