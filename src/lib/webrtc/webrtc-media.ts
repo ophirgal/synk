@@ -1,6 +1,6 @@
 import { LOCAL_VIDEO_ELEMENT_ID } from "@/constants/constants";
 import { getRemoteVideoElementId, getRemoteAudioElementId } from "@/lib/utils";
-import { RTCPeerConnectionSignalingState, RTCPeerConnectionState, globalRTCConfiguration } from "./constants";
+import { RTCPeerConnectionSignalingState, RTCPeerConnectionState, buildRTCConfiguration } from "./constants";
 
 type WebRTCConnection = {
     peerConnection: RTCPeerConnection,
@@ -143,7 +143,8 @@ class WebRTCConnectionProvider {
         onConnectionConnected: () => void,
         onDataChannelReady: (connectionId: string, channel: RTCDataChannel) => void
     ): Promise<RTCSessionDescriptionInit> {
-        const conn: WebRTCConnection = { peerConnection: new RTCPeerConnection(globalRTCConfiguration), state: RTCPeerConnectionState.CONNECTING };
+        const rtcConfig = await buildRTCConfiguration();
+        const conn: WebRTCConnection = { peerConnection: new RTCPeerConnection(rtcConfig), state: RTCPeerConnectionState.CONNECTING };
         this.connections[connectionId] = conn;
         this.emit(); // notify subscribers that a new connection has been created
 
@@ -204,7 +205,8 @@ class WebRTCConnectionProvider {
         if (this.connections[connectionId]?.peerConnection) { // connection was created, return local description as answer
             return this.connections[connectionId].peerConnection.currentLocalDescription!;
         }
-        const conn: WebRTCConnection = { peerConnection: new RTCPeerConnection(globalRTCConfiguration), state: RTCPeerConnectionState.CONNECTING };
+        const rtcConfig = await buildRTCConfiguration();
+        const conn: WebRTCConnection = { peerConnection: new RTCPeerConnection(rtcConfig), state: RTCPeerConnectionState.CONNECTING };
         this.connections[connectionId] = conn;
         this.emit(); // notify subscribers that a new connection has been created
 
@@ -264,7 +266,7 @@ class WebRTCConnectionProvider {
         // using Set membership to prevent race condition with other async calls to setRemoteAnswer
         if (this.settingRemoteDesc.has(connectionId)) return;
         this.settingRemoteDesc.add(connectionId);
-        
+
         try {
             const conn = this.connections[connectionId];
             if (conn?.peerConnection && !this.isRemoteDescriptionSet(connectionId) &&
